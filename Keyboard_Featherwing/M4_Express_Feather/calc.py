@@ -65,7 +65,7 @@ def GetTouch(data):
         if y>LCDY:
             y=LCDY
         if x>LCDX:
-            y=LCDX
+            x=LCDX
         tp = (x,y)
         return tp
 
