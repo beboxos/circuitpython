@@ -1,0 +1,9 @@
+GUI r
+
+DELAY 200
+
+STRING explorer.exe
+
+ENTER
+
+REM FIN

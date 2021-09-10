@@ -1,0 +1,34 @@
+REM Press windows + R 
+GUI r
+
+REM attends 200 ms 
+
+DELAY 500 
+
+REM tape notepad.exe
+
+STRING notepad.exe 
+
+REM presse touche ENTER 
+ENTER
+
+DELAY 500
+
+
+REM tape hello world! 
+
+STRING hello world! 
+
+DELAY 2000 
+
+REM press alt + F4 
+ALT F4
+
+REM presse fleche droite 
+RIGHT
+
+REM presse ENTER 
+ENTER
+
+
+REM test remarque 

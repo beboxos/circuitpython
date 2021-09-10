@@ -1,0 +1,5 @@
+STRING Hello World!
+
+ENTER
+
+REM fin
