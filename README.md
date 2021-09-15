@@ -1,5 +1,6 @@
 <h1>Welcome to BeBoXoS Circuitpython repository</h1>
-wath is available on my repository 
+
+On my repository you will find ...
 
 <h1>Cirtuitpython launcher for Adafruit PyPortal titano</h1>
 
