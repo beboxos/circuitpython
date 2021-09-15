@@ -139,7 +139,7 @@ def DrawMenu(start):
         index=index+1
                 
     if index-start>9:
-        add_button(2, 4, "Next ... "+str(int((index-start)/9)),2, ORANGE, WHITE)
+        add_button(2, 4, "Next ... "+str(int((start+9)/9)),2, ORANGE, WHITE)
     else:
         if start!=0:
             add_button(2, 4, "Next ... 0",2, ORANGE, WHITE)
