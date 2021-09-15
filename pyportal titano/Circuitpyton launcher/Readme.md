@@ -11,22 +11,18 @@ the limit of the file names is 24 characters (.py included) that is to say 21 ch
 If you want to exclude other files you can always add them in code.py at line 121
 
 When you write your application to leave and return to the menu, it is enough to make a reset of your card for that 3 cases:
-
 * Press the reset button of your card
 * Cut and put back the power supply 
 * Import microcontroller and use the command microcontroller.reset()
 
 You can see the examples I put to see microcontroller.reset() in action.
-
 For some reason, it happens sometimes, that some python script doesn't work and I am trying to understand why. 
 
 Several reasons: 
-
 * The fact of calling python files via the OS lib with exec(open()) poses a problem (I would have to see if there is a way to pass by an import
 * Unsupported characters in the file name 
 
 possible / future improvements : 
-
 * Take into account the fact of navigating the menu via physical buttons (for devices without touch functions).
 
 * Read the files to launch from an SD card (for cards without much memory)
