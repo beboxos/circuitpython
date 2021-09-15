@@ -13,7 +13,7 @@ by default are excluded from the list the files :
 
 the limit of the file names is 24 characters (.py included) that is to say 21 characters because it stores in the non-volatile memory (in the 25 first bytes) the file name to be launched at the next reset.
 
-If you want to exclude other files you can always add them in code.py at line 121
+If you want to exclude other files you can always add them in [code.py at line 121](https://github.com/beboxos/circuitpython/blob/a470852d9fb7b90fc01971e96d4b7b3bbc51355a/pyportal%20titano/Circuitpyton%20launcher/code.py#L121).
 
 When you write your application to leave and return to the menu, it is enough to make a reset of your card for that 3 cases:
 * Press the reset button of your card
