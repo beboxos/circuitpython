@@ -19,9 +19,11 @@ when you write your application to leave and return to the menu, it is enough to
 
 you can see the examples I put to see microcontroller.reset() in action.
 
-for some reason I don't know it happens that some python script doesn't work and I am trying to understand why. several reasons: 
+for some reason I don't know it happens that some python script doesn't work and I am trying to understand why. 
 
-* the fact of calling them via the bone with exec(open()) poses a problem (I would have to see if there is a way to pass by an import
+several reasons: 
+
+* the fact of calling python files  via the OS lib with exec(open()) poses a problem (I would have to see if there is a way to pass by an import
 * unsupported characters in the file name 
 
 possible / future improvements : 
