@@ -7,7 +7,7 @@ On my repository you will find ...
 ![launcher](/images/launcher.png)
 
 An touch application launcher for circuitpython 
-[clic here to go on this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/Circuitpyton%20launcher)
+[Clic here to go on this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/Circuitpyton%20launcher)
 
 <h1>Keyboard Featherwing</h1>
 
@@ -15,6 +15,6 @@ An touch application launcher for circuitpython
 
 All my codes for Keyboard Featherwing
 * [Code for Feather S2](https://github.com/beboxos/circuitpython/tree/main/Keyboard_Featherwing/FeatherS2)
-* [code for Feather M4 Express](https://github.com/beboxos/circuitpython/tree/main/Keyboard_Featherwing/M4_Express_Feather)
+* [Code for Feather M4 Express](https://github.com/beboxos/circuitpython/tree/main/Keyboard_Featherwing/M4_Express_Feather)
 
 
