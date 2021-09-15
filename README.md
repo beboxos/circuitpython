@@ -19,7 +19,7 @@ All my codes for Keyboard Featherwing
 
 <h1>pico RGB keypad</h1>
 
-![pico](https://github.com/beboxos/circuitpython/tree/main/pico%20RGB%20Keyboard)
+![pico](/images/picorgb.jpg)
 
 all my code for Raspberry pi pico RGB keypad
 
