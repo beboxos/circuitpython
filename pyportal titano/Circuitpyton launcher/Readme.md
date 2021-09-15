@@ -5,7 +5,12 @@
 Welcome to the Circuitpython launcher section.
 
 This launcher can bring 8 pages of 8 programs, that is 64 entries.
-It builds itself from the files present at the root of CIRCUITPY. by default are not taken in the list the files code.py (itself) and secrets.py (no interest) (and calculator.py because it is a module of calculation for the calculator).
+It builds itself from the files present at the root of CIRCUITPY. 
+by default are excluded from the list the files :
+* code.py (itself) 
+* secrets.py (no interest) 
+* (and calculator.py because it is a module of calculation for the calculator application titano_calc).
+
 the limit of the file names is 24 characters (.py included) that is to say 21 characters because it stores in the non-volatile memory (in the 25 first bytes) the file name to be launched at the next reset.
 
 If you want to exclude other files you can always add them in code.py at line 121
@@ -22,7 +27,7 @@ Several reasons:
 * The fact of calling python files via the OS lib with exec(open()) poses a problem (I would have to see if there is a way to pass by an import
 * Unsupported characters in the file name 
 
-possible / future improvements : 
+**possible / future improvements :** 
 * Take into account the fact of navigating the menu via physical buttons (for devices without touch functions).
 
 * Read the files to launch from an SD card (for cards without much memory)
