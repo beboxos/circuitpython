@@ -4,6 +4,9 @@
 
 Welcome to the Circuitpython launcher section. <br/>
  <br/>
+ 
+ [demo video](https://www.youtube.com/watch?v=-bFsBaRWSHk)
+ 
 This launcher can bring 8 pages of 8 programs, that is 64 entries. <br/>
 It builds itself from the files present at the root of CIRCUITPY.  <br/>
 by default are excluded from the list the files : <br/>
