@@ -1,4 +1,4 @@
-<h1>ATMegaZero S2 secition</h1>
+<h1>ATMegaZero S2 section</h1>
 
 helpfull pin to pin name table 
 
