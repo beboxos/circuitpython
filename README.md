@@ -35,6 +35,6 @@ all my code for Raspberry pi pico RGB keypad
 
 ![atmega](/images/atmegazero.png)
 
-All example etc made for this card [can be found here](https://github.com/beboxos/circuitpython/tree/main/ATMegaZero%20S2)
+All examples etc made for this card [can be found here](https://github.com/beboxos/circuitpython/tree/main/ATMegaZero%20S2)
 
 
