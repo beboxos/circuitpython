@@ -30,3 +30,11 @@ all my code for Raspberry pi pico RGB keypad
 ![challenger](/images/challenger.png)
 
 [Clic here to access to my section for CHallenger2040Wifi](https://github.com/beboxos/circuitpython/tree/main/Challenger2040WiFi) (basically a pico 2040 with ESP8682 Wifi)
+
+<h1>ATMegaZero S2</h1>
+
+![atmega](/images/atmegazero.png)
+
+All examples etc made for this card [can be found here](https://github.com/beboxos/circuitpython/tree/main/ATMegaZero%20S2)
+
+
