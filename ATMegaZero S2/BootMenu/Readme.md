@@ -12,4 +12,4 @@ in the code you can adjust parameters for your device :
 All is automatised, script scan root of the card for .py files and build a menu to choose the file tu run on next reset, then reset the card.
 I added an hardware test file to test buttons etc of [Adafruit Mini PiTFT 1.13"(240x135)](https://www.adafruit.com/product/4393)
 
-if case stl interest you, you can find it [on my Thingiverse](https://www.thingiverse.com/thing:4967980) case is designed for [UPS-Lite](https://fr.aliexpress.com/item/1005002389127372.html) + [ATMegaZero S2](https://atmegazero.com/#/atmegazero_esp32s2_overview) + [Adafruit Mini PiTFT 1.13"(240x135)](https://www.adafruit.com/product/4393)
+if case stl files interest you, you can find them [on my Thingiverse](https://www.thingiverse.com/thing:4967980) case is designed for [UPS-Lite](https://fr.aliexpress.com/item/1005002389127372.html) + [ATMegaZero S2](https://atmegazero.com/#/atmegazero_esp32s2_overview) + [Adafruit Mini PiTFT 1.13"(240x135)](https://www.adafruit.com/product/4393)
