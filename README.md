@@ -37,4 +37,7 @@ all my code for Raspberry pi pico RGB keypad
 
 All examples etc made for this card [can be found here](https://github.com/beboxos/circuitpython/tree/main/ATMegaZero%20S2)
 
+<h1>Seeed XIAO</h1>
 
+![seed](/images/xiao.png)
+ In this [section you will find all my codes for Seeed Xiao](https://github.com/beboxos/circuitpython/tree/main/Seeed%20XIAO) inclued my [UART to HID code](https://github.com/beboxos/circuitpython/tree/main/Seeed%20XIAO/UartToHID).
