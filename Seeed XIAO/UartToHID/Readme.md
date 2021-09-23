@@ -8,6 +8,7 @@ language command is simple because it's the well known [Hak5 Rubber ducky langua
 i added a little trick that let you use XIAO as classic autonomous USB rubber ducky like. At boot le script start by running all commands in boot.txt (in [this example](https://github.com/beboxos/circuitpython/blob/main/Seeed%20XIAO/UartToHID/boot.txt) at start wait 1 second then press GUI aka windows key then wait 1 second and press again GUI key) once code is finished it start waiting commands on UART.
 
 i fixed speed to classic 9600 bauds.
+
 Warning : use libs from this repository because i have modified them to fit in xiao and added some feature in it. 
 
 i build and hardware with grove plug to be compatible with M5stack devices
