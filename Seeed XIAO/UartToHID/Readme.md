@@ -9,6 +9,8 @@ i added a little trick that let you use XIAO as classic autonomous USB rubber du
 
 i fixed speed to classic 9600 bauds.
 
+by default i fixed keyboard layout to FR azerty keyboard edit first line to layout =  us for us keyboard
+
 Warning : use libs from this repository because i have modified them to fit in xiao and added some feature in it. 
 
 i build and hardware with grove plug to be compatible with M5stack devices
