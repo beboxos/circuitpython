@@ -75,72 +75,21 @@ commands = {
     "CONTROL": Keycode.CONTROL,
     "CTRL": Keycode.CONTROL,
 }
-
-
 class Ducky:
-    """
-    Class that runs a DuckyScript file.
-
-    **Quickstart: Importing and using the library**
-
-        Here is an example of using the :class:`Ducky` class.
-        First you will need to import the libraries
-
-        .. code-block:: python
-
-            import time
-            import usb_hid
-            from adafruit_hid.keyboard import Keyboard
-            from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
-            import ducky
-
-        Once this is done, define the keyboard layout and initialize the :class:`Ducky` class.
-
-        .. code-block:: python
-
-            time.sleep(1)  # Sleep for a bit to avoid a race condition on some systems
-            keyboard = Keyboard(usb_hid.devices)
-            keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
-
-            duck = ducky.Ducky('duckyscript.txt', keyboard, keyboard_layout)
-
-        Now, set up a loop which will run a line of the script every time `loop` is called.
-
-        .. code-block:: python
-
-            result = True
-            while result is not False:
-                result = duck.loop()
-
-    """
-
     def __init__(self, filename, keyboard, layout):
         self.keyboard = keyboard
         self.layout = layout
         self.lines = []
-        self.default_delay = 0
+        self.default_delay = 0.1
         self.last = 0
-
-        with open(filename, "r") as duckyscript:
+        try:
+            with open(filename, "r") as duckyscript:
+                for line in duckyscript:
+                    self.lines.append(line.strip())
+        except:
+            duckyscript=["REM Single Command mode\r\n", filename+"\r\n", "REM end\r\n"]
             for line in duckyscript:
-                # modified to -2 to remove \r\n in text file
-                # need to be improved
-                EOF = line[-2]
-                #print (line[:-2] + " : " , end='')
-                if EOF[0]=='\r':
-                    #print("\\r" , end='')
-                    if line[-1]=='\n':
-                        #print ("\\n")
-                        self.lines.append(line[:-2])
-                    else:
-                        #print ("EOF != \\r\\n")
-                        self.lines.append(line[:-1])
-                else:
-                    #print ("EOF != \\r\\n")
-                    self.lines.append(line[:-1])
-                
-                #print(line)
-
+                self.lines.append(line.strip())
     def loop(
         self, line=None
     ):  # pylint: disable=too-many-branches,too-many-return-statements
@@ -154,10 +103,7 @@ class Ducky:
         if len(line) != 0:
             words = line.split(" ", 1)
             start = words[0]
-            #print(start)
-            #time.sleep(1)
             if start == "REM":
-                print(words[1])
                 time.sleep(self.default_delay)
                 self.lines.pop(0)
                 return True
@@ -170,8 +116,6 @@ class Ducky:
                 return True
 
             if start == "DELAY":
-                #print("Delay found")
-                #print(str(words[1]))
                 time.sleep(int(words[1]) / 1000)
                 time.sleep(self.default_delay)
                 self.last = self.lines[0]
@@ -186,7 +130,6 @@ class Ducky:
                 return True
 
             if start == "REPEAT":
-                #print(int(words[1]))
                 for _ in range(int(words[1])):
                     self.lines.insert(0, self.last)
                     self.loop()
@@ -215,11 +158,7 @@ class Ducky:
 
     def write_key(self, start):
         """ Writes the keys over HID. Used to help with more complicated commands """
-        #print("start = " + str(start))
         if start in commands:
-            #print("start found in commands: " + str(start))
-            #print(str(commands[start]))
             self.keyboard.press(commands[start])
         else:
-            #print("start not found : " + str(start))
             self.layout.write(start)
