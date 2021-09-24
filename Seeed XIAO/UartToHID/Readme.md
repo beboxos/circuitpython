@@ -17,8 +17,16 @@ i build and hardware with grove plug to be compatible with M5stack devices
 
 ![img](images/20210923_221442.jpg)
 
+to understand wires here are the pinouts of XIAO
+
+![pin](images/pinout.jpg)
+
 then here is an example of code on m5stack core 2 UIFLOW
 
 ![img2](images/20210923_221620.jpg)
 
 ![code](images/m5.png)
+
+If you need to print a case for the module [you can find STL files on my Thingiverse](https://www.thingiverse.com/thing:4973077) 
+
+![mod](images/module.jpg)
