@@ -41,3 +41,11 @@ All examples etc made for this card [can be found here](https://github.com/bebox
 
 ![seed](/images/xiao.png)
  In this [section you will find all my codes for Seeed Xiao](https://github.com/beboxos/circuitpython/tree/main/Seeed%20XIAO) inclued my [UART to HID code](https://github.com/beboxos/circuitpython/tree/main/Seeed%20XIAO/UartToHID).
+
+<h1>Adafruit MagTag</h1>
+
+[!img](/images/img.jpg)
+
+[here you can find all apps for this device](https://github.com/beboxos/circuitpython/tree/main/MagTag)
+
+
