@@ -8,4 +8,4 @@ It allows you to choose the application that will be launched after each reset. 
 
 this menu is in development phase but works as it is for the moment or can be used as a base for your projects.
 
-Translated with www.DeepL.com/Translator (free version)
+
