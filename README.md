@@ -48,4 +48,8 @@ All examples etc made for this card [can be found here](https://github.com/bebox
 
 [here you can find all apps for this device](https://github.com/beboxos/circuitpython/tree/main/MagTag)
 
+<h1>Seeed Wio Terminal</h1>
 
+![img2](/images/wio.png)
+
+[here you can find all my codes for the wio terminal](https://github.com/beboxos/circuitpython/tree/main/WIO%20terminal)
