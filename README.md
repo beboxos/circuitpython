@@ -9,6 +9,14 @@ On my repository you will find ...
 An touch application launcher for circuitpython 
 [Clic here to go on this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/Circuitpyton%20launcher)
 
+
+<h1>basic python for pyportal(work on wio terminal toot)</h1>
+
+![bpyth](https://github.com/tannewt/basicpython/raw/main/example.svg)
+
+[clic here to jump directly on this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/basicpython)
+
+
 <h1>Keyboard Featherwing</h1>
 
 ![keyboardfeatherwing](/images/keyboardfeatherwing.png)
