@@ -12,7 +12,6 @@ An touch application launcher for circuitpython
 
 <h1>basic python for pyportal(work on wio terminal toot)</h1>
 
-![bpyth](https://github.com/tannewt/basicpython/raw/main/example.svg)
 
 based on the wonderfull piece of code of Scott Shawcroft
 original version from https://github.com/tannewt/basicpython
@@ -30,6 +29,10 @@ on next update will try to add more features to act as a light os
 this make our little gadgets autonomous for running and coding on the go
 
 Enjoy it.
+
+![bpyth](https://github.com/tannewt/basicpython/raw/main/example.svg)
+
+
 [clic here to jump directly on this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/basicpython)
 
 
