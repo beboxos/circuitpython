@@ -1,46 +1,38 @@
-<h1>Welcome to BeBoXoS Circuitpython repository</h1>
+<h1>Welcome to BeBoXoS CircuitPython repository</h1>
 
-On my repository you will find ...
+On my repository you will find...
 
-<h1>Cirtuitpython launcher for Adafruit PyPortal titano</h1>
+<h1>CircuitPython launcher for Adafruit PyPortal titano</h1>
 
 ![launcher](/images/launcher.png)
 
-An touch application launcher for circuitpython 
-[Clic here to go on this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/Circuitpyton%20launcher)
+A touch application launcher for CircuitPython 
+[Clic here to go to this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/Circuitpyton%20launcher)
 
+<h1>Basic Python for PyPortal (Works on Wio Terminal too!)</h1>
 
-<h1>basic python for pyportal(work on wio terminal toot)</h1>
+Based on the wonderful piece of code by Scott Shawcroft, original version from https://github.com/tannewt/basicpython.
+Originally ir is an experiment to edit Python code like BASIC was edited. The idea is to imagine this as the default mode on a Raspberry Pi 400.
 
+I ported it to Adafruit Pyportal Titano CircuitPython (works on Wio Terminal under CircuitPython too).
 
-based on the wonderfull piece of code of Scott Shawcroft
-original version from https://github.com/tannewt/basicpython
-originaly is an experiment to edit Python code like BASIC was edited.
-The idea is imagining this as the default mode on a Raspberry Pi 400.
+I added support for the I2C M5Stack CardKB keyboard, but it can work with any keyboard. I added a `dir` function to list files in a directory.
 
-i ported it to Adafruit Pyportal Titano circuitpython
-(work on wio terminal under circuitpython too)
+On the next update, I will try to add more features to act as a light OS.
 
-i added i2c m5stack keyboard CardKB but can work with any keyboard
-i added a dir function to list files in directory
+This makes our little gadgets autonomous for running and coding on the go.
 
-on next update will try to add more features to act as a light os
-
-this make our little gadgets autonomous for running and coding on the go
-
-Enjoy it.
+Enjoy!
 
 ![bpyth](https://github.com/tannewt/basicpython/raw/main/example.svg)
 
-
-[clic here to jump directly on this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/basicpython)
-
+[clic here to jump directly to this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/basicpython)
 
 <h1>Keyboard Featherwing</h1>
 
 ![keyboardfeatherwing](/images/keyboardfeatherwing.png)
 
-All my codes for Keyboard Featherwing
+All my code for Keyboard Featherwing
 * [Code for Feather S2](https://github.com/beboxos/circuitpython/tree/main/Keyboard_Featherwing/FeatherS2)
 * [Code for Feather M4 Express](https://github.com/beboxos/circuitpython/tree/main/Keyboard_Featherwing/M4_Express_Feather)
 
@@ -48,15 +40,15 @@ All my codes for Keyboard Featherwing
 
 ![pico](/images/picorgb.jpg)
 
-all my code for Raspberry pi pico RGB keypad
+All my code for Raspberry Pi pico RGB keypad
 
-[CLic here to access on section](https://github.com/beboxos/circuitpython/tree/main/pico%20RGB%20Keyboard)
+[CLic here to access this section](https://github.com/beboxos/circuitpython/tree/main/pico%20RGB%20Keyboard)
 
 <h1>Challenger 2040 wifi Feather</h1>
 
 ![challenger](/images/challenger.png)
 
-[Clic here to access to my section for CHallenger2040Wifi](https://github.com/beboxos/circuitpython/tree/main/Challenger2040WiFi) (basically a pico 2040 with ESP8682 Wifi)
+[Clic here to access my section for Challenger2040Wifi](https://github.com/beboxos/circuitpython/tree/main/Challenger2040WiFi) (basically a pico 2040 with ESP8682 Wifi)
 
 <h1>ATMegaZero S2</h1>
 
@@ -79,4 +71,4 @@ All examples etc made for this card [can be found here](https://github.com/bebox
 
 ![img2](/images/wio.png)
 
-[here you can find all my codes for the wio terminal](https://github.com/beboxos/circuitpython/tree/main/WIO%20terminal)
+[here you can find all my code for the Wio Terminal](https://github.com/beboxos/circuitpython/tree/main/WIO%20terminal)
