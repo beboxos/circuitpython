@@ -1,5 +1,7 @@
 <h1>basic python for pyportal(work on wio terminal toot)</h1>
 
+![imm](https://pbs.twimg.com/media/FBaB0n4X0AIhNZ8?format=jpg&name=large)
+
 ![bpyth](https://github.com/tannewt/basicpython/raw/main/example.svg)
 
 based on the wonderfull piece of code of Scott Shawcroft
