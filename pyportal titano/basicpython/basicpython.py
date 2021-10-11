@@ -77,9 +77,21 @@ def InputFromKB(prompt):
     return datainput
 for i in range(20):
     print()
-print("# Basic Python v0.01               ")
-print("For Circuitpython devices with CardKB i2c")
-print("!help for command list")
+banner =(
+"""
+***********************************************************
+*  ___            _      ___  _  _  _    _                *
+* | _ ) __ _  ___(_) __ | _ \| || || |_ | |_   ___  _ _   *
+* | _ \/ _` |(_-/| |/ _||  _/ \_. ||  _||   \ / _ \| ' \  *
+* |___/\__/_|/__/|_|\__||_|   |__/  \__||_||_|\___/|_||_| *
+***********************************************************
+v0.02 for Circuitpython devices with CardKB i2c
+
+""")
+#print("# Basic Python v0.01               ")
+#print("For Circuitpython devices with CardKB i2c")
+print(banner)
+print("Enter !help for command list")
 
 program = []
 top = {}
@@ -148,7 +160,21 @@ while True:
         microcontroller.reset()
 
     elif command.lower() == "exit":
-        microcontroller.reset()
+        break
+    elif command.lower() == "cd":
+        path=remainder
+        try:
+            os.getcwd(path)
+        except Exception as e:
+            pass
+        print(os.getcwd())
+    elif command.lower() == "rm":
+        file=remainder
+        try:
+            os.remove(file)
+        except Exception as e:
+            print(e)
+            
         
     elif command.lower() == "!help":
         print("Listing of available commands :")
@@ -157,8 +183,10 @@ while True:
         print("load : load a program")
         print("save : save curent program")
         print("dir  : show directory content")
+        print("cd   : change directory path")
+        print("rm   : remove file")
         print("reset: reset device")
-        print("exit : reset device")
+        print("exit : exit to REPL")
         
     else:
         try:
