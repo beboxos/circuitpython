@@ -1,4 +1,4 @@
-<h1>basic python for pyportal(work on wio terminal toot)</h1>
+<h1>basic python for pyportal(work on wio terminal too)</h1>
 
 ![imm](https://pbs.twimg.com/media/FBaB0n4X0AIhNZ8?format=jpg&name=large)
 
