@@ -20,3 +20,6 @@ on next update will try to add more features to act as a light os
 this make our little gadgets autonomous for running and coding on the go
 
 Enjoy it.
+
+change log
+20.10.2021 : now can use arrow on keyboard , up/down to recall keystroke history, left/right for inline editing, and some minor changes in main code

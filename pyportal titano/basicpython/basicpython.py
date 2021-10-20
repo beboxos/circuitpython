@@ -39,6 +39,10 @@ NUL = '\x00'
 CR = "\r"
 LF = "\n"
 
+buffer=[]
+bufidx=0
+curseur=0
+
 b = bytearray(1)
 
 
@@ -48,13 +52,18 @@ def ReadKey():
     try:
         c = b.decode()
     except:
-        c = ""
+        c = b
+        #print(b)
+           
     if c == CR:
         # convert CR return key to LF
         c = LF
     return c
 
 def InputFromKB(prompt):
+    global bufidx
+    global buffer
+    global curseur
     key=''
     keyRead=''
     datainput=''
@@ -65,18 +74,100 @@ def InputFromKB(prompt):
             #key = key[1]
             if key!=NUL:
                 if key!="\n":
-                    print(key, end='')
-                    if key!='\x08':
-                        datainput+=key
-                    else:
-                        datainput=datainput[:-1]
-                        #print(key, end="")
-                        print(" ", end="")
-                        print(key, end="")
+                    if key==b'\xb5':
+                        #key up
+                        if len(buffer)!=0:
+                            if bufidx>0:
+                                bufidx=bufidx-1
+                            else:
+                                bufidx=0
+                            tmp=len(datainput)
+                            datainput=buffer[bufidx]
+                            print(chr(27)+"[2K", end="")
+                            print(chr(27)+"["+str(tmp)+"D", end="")
+                            print(" "*20, end="")
+                            print(chr(27)+"[2K", end="")
+                            print(chr(27)+"[20D", end="")                            
+                            print(datainput, end="")
+                    elif key==b'\xb6':
+                        #key down
+                        if len(buffer)!=0:
+                            if bufidx<len(buffer)-1:
+                                bufidx=bufidx+1
+                            else:
+                                bufidx=len(buffer)-1
+                            tmp=len(datainput)
+                            datainput=buffer[bufidx]
+                            print(chr(27)+"[2K", end="")
+                            print(chr(27)+"["+str(tmp)+"D", end="")
+                            print(" "*40, end="")
+                            print(chr(27)+"[2K", end="")
+                            print(chr(27)+"[40D", end="")                            
+                            print(datainput, end="")
+                    elif key == b'\xb7':
+                        #right
+                        #print("kooi")
+                        try:
+                            print(datainput[curseur], end="")
+                        except:
+                            pass
+                        curseur+=1
+                        if curseur>len(datainput):
+                            curseur=len(datainput)
+                        else:
+                            if curseur!=len(datainput):
+                                print(" "+datainput[-(len(datainput)-curseur):], end="")
+                                print(chr(27)+"["+str((len(datainput)-curseur)+1)+"D", end="")
+                            else:
+                                print(" ", end="")
+                                print(chr(27)+"[1D", end="")
+                                
+                    elif key == b'\xb4':
+                        #left
+                        curseur-=1
+                        if curseur<0:
+                            curseur=0
+                        else:
+                            print(chr(27)+"[1D", end="")
+                            print(" "+datainput[-(len(datainput)-curseur):], end="")
+                            print(chr(27)+"["+str((len(datainput)-curseur)+1)+"D", end="")
+                    else:                            
+                        print(key, end='')
+                        if key!='\x08':
+                            if curseur==len(datainput):
+                                datainput+=key
+                                curseur+=1
+                            else:
+                                #edition de ligne !!
+                                first=datainput[:curseur]
+                                end=datainput[curseur:]
+                                print(" "+end, end="")
+                                print(chr(27)+"["+str(len(end)+1)+"D", end="")
+                                datainput=first+key+end
+                                curseur+=1
+                        else:
+                            if curseur==len(datainput):
+                                datainput=datainput[:-1]
+                                curseur=curseur-1
+                                #print(key, end="")
+                                print(" ", end="")
+                                print(key, end="")
+                            else:
+                                #we delete not a the end, what an idea lol
+                                first=datainput[:curseur-1]
+                                end=datainput[curseur:]
+                                print(" "+end, end="")
+                                print(chr(27)+"["+str(len(end)+1)+"D", end="")
+                                datainput=first+end
+                                curseur=curseur-1
+    
+    buffer.append(datainput)
+    bufidx = len(buffer)
     print()
+    curseur=0
+    #print("debug, data ="+datainput)
     return datainput
-for i in range(20):
-    print()
+print(chr(27)+"[2J", end="")
 banner =(
 """
 ***********************************************************
@@ -85,11 +176,10 @@ banner =(
 * | _ \/ _` |(_-/| |/ _||  _/ \_. ||  _||   \ / _ \| ' \  *
 * |___/\__/_|/__/|_|\__||_|   |__/  \__||_||_|\___/|_||_| *
 ***********************************************************
-v0.02 for Circuitpython devices with CardKB i2c
+v0.03 for Circuitpython devices with CardKB i2c
 
 """)
-#print("# Basic Python v0.01               ")
-#print("For Circuitpython devices with CardKB i2c")
+
 print(banner)
 print("Enter !help for command list")
 
@@ -99,7 +189,6 @@ no_ready = False
 
 while True:
     if no_ready:
-        #version for keyboard FeatherWing
         line = InputFromKB(">>>")
         #line = input()
     else:
@@ -185,8 +274,12 @@ while True:
         print("dir  : show directory content")
         print("cd   : change directory path")
         print("rm   : remove file")
+        print("cls  : clear screen")
         print("reset: reset device")
         print("exit : exit to REPL")
+        
+    elif command.lower() == "cls":
+        print(chr(27)+"[2J", end="")
         
     else:
         try:
