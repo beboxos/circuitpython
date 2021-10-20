@@ -64,14 +64,17 @@ def InputFromKB(prompt):
     global bufidx
     global buffer
     global curseur
+    buffer.append('')
+    bufidx=len(buffer)-1
     key=''
     keyRead=''
     datainput=''
     print(prompt, end='')
     while key!="\n":
-            key=ReadKey()
-            #key = keyRead[0]    
-            #key = key[1]
+            try:
+                key=ReadKey()
+            except:
+                pass
             if key!=NUL:
                 if key!="\n":
                     if key==b'\xb5':
@@ -106,7 +109,6 @@ def InputFromKB(prompt):
                             print(datainput, end="")
                     elif key == b'\xb7':
                         #right
-                        #print("kooi")
                         try:
                             print(datainput[curseur], end="")
                         except:
@@ -149,7 +151,6 @@ def InputFromKB(prompt):
                             if curseur==len(datainput):
                                 datainput=datainput[:-1]
                                 curseur=curseur-1
-                                #print(key, end="")
                                 print(" ", end="")
                                 print(key, end="")
                             else:
@@ -161,11 +162,11 @@ def InputFromKB(prompt):
                                 datainput=first+end
                                 curseur=curseur-1
     
-    buffer.append(datainput)
-    bufidx = len(buffer)
+
+    buffer[bufidx]=datainput
+    #bufidx = len(buffer)
     print()
     curseur=0
-    #print("debug, data ="+datainput)
     return datainput
 print(chr(27)+"[2J", end="")
 banner =(
