@@ -1,0 +1,8 @@
+REM DEMO
+
+STRING hello world
+
+ENTER
+
+REM END
+

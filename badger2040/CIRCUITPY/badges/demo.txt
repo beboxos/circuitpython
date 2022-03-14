@@ -1,0 +1,6 @@
+BeBoX inc.
+BeBoXoS
+RP2040
+2MB Flash
+E ink
+296x128px
