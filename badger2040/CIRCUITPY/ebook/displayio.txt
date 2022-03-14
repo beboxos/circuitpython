@@ -1,0 +1,11 @@
+>>> help(display)
+object <EPaperDisplay> is of type EPaperDisplay
+  show -- <function>
+  update_refresh_mode -- <function>
+  refresh -- <function>
+  width -- <property>
+  height -- <property>
+  rotation -- <property>
+  bus -- <property>
+  busy -- <property>
+  time_to_refresh -- <property>

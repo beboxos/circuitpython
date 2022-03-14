@@ -21,6 +21,7 @@ more : https://docs.circuitpython.org/projects/epd/en/latest/api.html
 '''
 #HID init
 layout = "fr" # fr or us
+
 import time
 import usb_hid
 from adafruit_hid.keyboard import Keyboard
@@ -168,12 +169,22 @@ vbat_adc = analogio.AnalogIn(board.VBAT_SENSE)
 #vref_adc = analogio.AnalogIn(board.1V2_REF)
 vref_en = analogio.AnalogIn(board.VREF_POWER)
 # ********************************* DISPLAY ******************************
+try:
+    import displayio                  # release displayio for epd driver use
+    displayio.release_displays()      # thanks to Chris Parrot
+except:
+    print("No displayio , ok then it's alpha release")
 import digitalio
 import busio
 from adafruit_epd.epd import Adafruit_EPD
 from adafruit_epd.il0373 import Adafruit_IL0373
 # create the spi device and pins we will need
-spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
+try:
+    spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+    # board.SCLK renamed to board.SCK
+except:
+    spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
+    print("alpha release declare spi different")
 ecs = digitalio.DigitalInOut(board.INKY_CS)
 dc = digitalio.DigitalInOut(board.INKY_DC)
 srcs = None #digitalio.DigitalInOut(board.D10)    # can be None to use internal memory
