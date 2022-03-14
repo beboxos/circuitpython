@@ -32,7 +32,8 @@ if cardkb != 95:
     print("!!! Check I2C config: " + str(i2c))
     print("!!! CardKB not found. I2C device", cardkb,
           "found instead.")
-    exit(1)
+    import sys
+    sys.exit(1)
  
 ESC = chr(27)
 NUL = '\x00'
