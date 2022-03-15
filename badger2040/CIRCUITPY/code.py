@@ -21,7 +21,12 @@ more : https://docs.circuitpython.org/projects/epd/en/latest/api.html
 '''
 #HID init
 layout = "fr" # fr or us
-
+import gc
+import os
+import math
+import microcontroller
+import board
+import analogio
 import time
 import usb_hid
 from adafruit_hid.keyboard import Keyboard
@@ -41,13 +46,35 @@ def callduck(filename):
         result = duck.loop()
     return result
 
+# button and led init
+from digitalio import DigitalInOut, Direction, Pull
+button_a = DigitalInOut(board.SW_A)
+button_a.direction = Direction.INPUT
+button_a.pull = Pull.DOWN
+button_b = DigitalInOut(board.SW_B)
+button_b.direction = Direction.INPUT
+button_b.pull = Pull.DOWN
+button_c = DigitalInOut(board.SW_C)
+button_c.direction = Direction.INPUT
+button_c.pull = Pull.DOWN
+button_up = DigitalInOut(board.SW_UP)
+button_up.direction = Direction.INPUT
+button_up.pull = Pull.DOWN
+button_down = DigitalInOut(board.SW_DOWN)
+button_down.direction = Direction.INPUT
+button_down.pull = Pull.DOWN
+# False = up , True = pressed
 
-import gc
-import os
-import math
-import microcontroller
-import board
-import analogio
+led = DigitalInOut(board.USER_LED)
+led.direction = Direction.OUTPUT
+#led.value = 1 for led on
+#led.value = 0 for led off
+led.value = 1
+# Inverted. For reasons.
+button_user = board.USER_SW
+
+
+
 
 MAX_BATTERY_VOLTAGE = 4.0
 MIN_BATTERY_VOLTAGE = 3.2
@@ -120,38 +147,14 @@ for n in ListFiles:
             count=count+1
 
 print(examples)
+led.value = 0
 font_sizes = (0.5, 0.7, 0.9)
 
 # Approximate center lines for buttons A, B and C
 centers = (41, 147, 253)
 
 #MAX_PAGE = math.ceil(len(examples) / 3)
-from digitalio import DigitalInOut, Direction, Pull
 
-button_a = DigitalInOut(board.SW_A)
-button_a.direction = Direction.INPUT
-button_a.pull = Pull.DOWN
-button_b = DigitalInOut(board.SW_B)
-button_b.direction = Direction.INPUT
-button_b.pull = Pull.DOWN
-button_c = DigitalInOut(board.SW_C)
-button_c.direction = Direction.INPUT
-button_c.pull = Pull.DOWN
-button_up = DigitalInOut(board.SW_UP)
-button_up.direction = Direction.INPUT
-button_up.pull = Pull.DOWN
-button_down = DigitalInOut(board.SW_DOWN)
-button_down.direction = Direction.INPUT
-button_down.pull = Pull.DOWN
-# False = up , True = pressed
-
-led = DigitalInOut(board.USER_LED)
-led.direction = Direction.OUTPUT
-#led.value = 1 for led on
-#led.value = 0 for led off
-
-# Inverted. For reasons.
-button_user = board.USER_SW
 
 # Battery measurement
 '''
@@ -999,15 +1002,100 @@ def render_page():
             # The appended line was not too long, so set it as the line and advance the current position
             line = appended_line
             pos = next_pos
-    
 
+# instant rubber ducky function
+# try if button a b c ... pressed at boot
+# launch script with name of button if present a.txt b.txt etc ..
+# special pentest
+pressed=False
+if button_a.value==True:
+    led.value=1
+    print("wait release a button to type text")
+    while button_a.value==True:
+        pass   
+    pressed=True
+    try:
+        x = open("a.txt","r")
+        x.close()
+        print("running script in a.txt")
+        callduck("a.txt")
+    except:
+        print("button a pressed but no a.txt present, continue ...")
+    led.value=0
+if button_b.value==True:
+    led.value=1
+    print("wait release b button to type text")
+    while button_b.value==True:
+        pass   
+    pressed=True
+    try:
+        x = open("b.txt","r")
+        x.close()
+        print("running script in b.txt")
+        callduck("b.txt")
+    except:
+        print("button b pressed but no b.txt present, continue ...")
+    led.value=0
+if button_c.value==True:
+    led.value=1
+    print("wait release c button to type text")
+    while button_c.value==True:
+        pass   
+    pressed=True
+    try:
+        x = open("c.txt","r")
+        x.close()
+        print("running script in c.txt")
+        callduck("c.txt")
+    except:
+        print("button c pressed but no c.txt present, continue ...")
+    led.value=0
+if button_up.value==True:
+    led.value=1
+    print("wait release up button to type text")
+    while button_up.value==True:
+        pass   
+    pressed=True
+    try:
+        x = open("up.txt","r")
+        x.close()
+        print("running script in up.txt")
+        callduck("up.txt")
+    except:
+        print("button up pressed but no up.txt present, continue ...")
+    led.value=0    
+if button_down.value==True:
+    led.value=1
+    print("wait release down button to type text")
+    while button_down.value==True:
+        pass   
+    pressed=True
+    try:
+        x = open("down.txt","r")
+        x.close()
+        print("running script in down.txt")
+        callduck("down.txt")        
+    except:
+        print("button down pressed buy no down.txt present, continue ...")
+    led.value=0   
+
+if pressed==True:
+    # ok need to press a key to continue , or unplug to not change display
+    print("Now you can unplug Badger2040 or press a button to continue on launcher")
+    while button_a.value==False and button_b.value==False and button_c.value==False and button_up.value==False and button_down.value==False:
+        led.value=1
+        time.sleep(0.5)
+        led.value=0
+        time.sleep(0.5)
+
+
+#let's display something 
 render(examples, "files")
-
-
+'''
 # Wait for wakeup button to be released
 while button_a.value==True or button_b.value==True or button_c.value==True or button_up.value==True or button_down.value==True:
     pass
-
+'''
 # main loop root 
 while True:
     if button_a.value==True:
