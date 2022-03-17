@@ -4,7 +4,7 @@ CircuitPython by BeBoX(c)
 email : depanet at gmail.com
 twitter : @beboxos
 edit from 03.2022
-
+change log : add info
 '''
 #HID init
 layout = "fr" # fr or us
