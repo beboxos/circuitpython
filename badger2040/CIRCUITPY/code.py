@@ -102,6 +102,7 @@ TEXT_WIDTH = WIDTH - TEXT_PADDING - TEXT_PADDING - ARROW_WIDTH
 # fonts
 font = bitmap_font.load_font("/fonts/Arial-12.bdf")
 font2 = bitmap_font.load_font("/fonts/Arial-Bold-24.bdf")
+font3=terminalio.FONT
 #font_sizes = (0.5, 0.7, 0.9)
 
 # Approximate center lines for buttons A, B and C
@@ -332,8 +333,8 @@ def launch(file):
 # important root routine ------------------------------------------------------------
 def launch_example(index):
     global page, font_size, inverted
-    print("index : "+str(index))
-    print(examples[(page * 3) + index][0])
+    #print("index : "+str(index))
+    #print(examples[(page * 3) + index][0])
     if (page * 3) + index == 0:
         hidexit=False
         #special action rubber ducky
@@ -475,6 +476,50 @@ def launch_example(index):
     if (page * 3) + index == 4:
         # info
         print("infos ...")
+        old=len(mainScreen)
+        LINE_HEIGHT = 16
+        y = 16 + int(LINE_HEIGHT / 2)
+        labelt = label.Label(font3, text="Made by Pimoroni, powered by Circuitpython", color=BLACK, scale=1)
+        labelt.x =  0
+        labelt.y =  y
+        mainScreen.append(labelt)
+        y += LINE_HEIGHT
+        labelt = label.Label(font3, text="Dual-core RP2040, 133MHz, 264KB RAM", color=BLACK, scale=1)
+        labelt.x =  0
+        labelt.y =  y
+        mainScreen.append(labelt)
+        y += LINE_HEIGHT
+        labelt = label.Label(font3, text="2MB Flash (1MB OS, 1MB Storage)", color=BLACK, scale=1)
+        labelt.x =  0
+        labelt.y =  y
+        mainScreen.append(labelt)
+        y += LINE_HEIGHT
+        labelt = label.Label(font3, text="296x128 pixel Black/White e-Ink", color=BLACK, scale=1)
+        labelt.x =  0
+        labelt.y =  y
+        mainScreen.append(labelt)
+        y += LINE_HEIGHT
+        y += LINE_HEIGHT
+        labelt = label.Label(font3, text="For more info: https://pimoroni.com/badger2040", color=BLACK, scale=1)
+        labelt.x =  0
+        labelt.y =  y
+        mainScreen.append(labelt)
+        y += LINE_HEIGHT
+        labelt = label.Label(font3, text="Launcher made by BeBox inspired by original.", color=BLACK, scale=1)
+        labelt.x =  0
+        labelt.y =  y
+        mainScreen.append(labelt)
+        display.show(mainScreen)
+        display.refresh()
+        new=len(mainScreen)
+        for i in range(old, new):
+            mainScreen.pop()
+        while button_a.value==False and button_b.value==False and button_c.value==False and button_up.value==False and button_down.value==False:
+            led.value=1
+            time.sleep(0.5)
+            led.value=0
+            time.sleep(0.5)
+        render(examples,"file")    
         return
     if (page * 3) + index == 5:
         # prefs
@@ -712,7 +757,7 @@ def hidbutton(pin):
 
 def button(pin):
     global page, font_size, inverted
-    print( "button pin : "+ str(pin))
+    #print( "button pin : "+ str(pin))
     #if button_user.value():  # User button is NOT held down
     if pin == 1:
         launch_example(0)
