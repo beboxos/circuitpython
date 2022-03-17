@@ -17,9 +17,12 @@ all the code has been rewritten to take into account the use of Adafruit Display
 
 ## todo: 
 management of the battery level.
-the "info" part
-the "prefs" part to set (in the non volatile memory) the hid parameters for the moment set in "hard" in the code by "layout = fr or layout = us 
-Code the list function as in the original micropython version.
+
+~~the "info" part~~ : done 17.03.2022<cr/>
+
+the "prefs" part to set (in the non volatile memory) the hid parameters for the moment set in "hard" in the code by "layout = fr or layout = us <cr/>
+
+Code the list function as in the original micropython version.<cr/>
 
 ------------
 
