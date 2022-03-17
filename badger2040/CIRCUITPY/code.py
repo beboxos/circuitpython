@@ -4,20 +4,7 @@ CircuitPython by BeBoX(c)
 email : depanet at gmail.com
 twitter : @beboxos
 edit from 03.2022
-adafruit_epd.epd référence :
-fill(color)
-fill_rect(x, y, width, height, color)
-rect(x, y, width, height, color)
-hline(x, y, width, color)
-vline(x, y, height, color)
-line(x_0, y_0, x_1, y_1, color)
-pixel(x, y, color)
-rotation
-text(string, x, y, color, *, font_name='font5x8.bin', size=1)
-colors :
-WHITE = 3
-BLACK = 0
-more : https://docs.circuitpython.org/projects/epd/en/latest/api.html
+
 '''
 #HID init
 layout = "fr" # fr or us
@@ -31,7 +18,28 @@ import time
 import usb_hid
 from adafruit_hid.keyboard import Keyboard
 import adafruit_ducky
-
+import digitalio
+import busio
+import displayio
+import terminalio
+import vectorio
+from adafruit_display_text import label
+from adafruit_bitmap_font import bitmap_font
+import adafruit_imageload
+from adafruit_display_shapes.rect import Rect
+from adafruit_display_shapes.circle import Circle
+from adafruit_display_shapes.roundrect import RoundRect
+from adafruit_display_shapes.triangle import Triangle
+from adafruit_display_shapes.line import Line
+from adafruit_display_shapes.polygon import Polygon
+from adafruit_epd.epd import Adafruit_EPD
+from adafruit_epd.il0373 import Adafruit_IL0373
+display =  board.DISPLAY
+display.rotation = 270
+palette = displayio.Palette(1)
+palette[0] = 0xFFFFFF
+WHITE = 0xFFFFFF
+BLACK = 0x000000
 keyboard = Keyboard(usb_hid.devices)
 if layout=="fr": 
     from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
@@ -45,7 +53,6 @@ def callduck(filename):
     while result is not False:
         result = duck.loop()
     return result
-
 # button and led init
 from digitalio import DigitalInOut, Direction, Pull
 button_a = DigitalInOut(board.SW_A)
@@ -64,28 +71,48 @@ button_down = DigitalInOut(board.SW_DOWN)
 button_down.direction = Direction.INPUT
 button_down.pull = Pull.DOWN
 # False = up , True = pressed
-
 led = DigitalInOut(board.USER_LED)
 led.direction = Direction.OUTPUT
 #led.value = 1 for led on
 #led.value = 0 for led off
+
+# led on
 led.value = 1
+# for later eventualy
 # Inverted. For reasons.
 button_user = board.USER_SW
 
+# vars 
+next_page = True
+prev_page = False
+last_offset = 0
+current_page = 0
+offsets = []
 
+WIDTH = display.width
+HEIGHT = display.height
+ARROW_THICKNESS = 3
+ARROW_WIDTH = 18
+ARROW_HEIGHT = 14
+ARROW_PADDING = 2
+TEXT_PADDING = 4
+TEXT_SIZE = 0.5
+TEXT_SPACING = int(34 * TEXT_SIZE)
+TEXT_WIDTH = WIDTH - TEXT_PADDING - TEXT_PADDING - ARROW_WIDTH
+# fonts
+font = bitmap_font.load_font("/fonts/Arial-12.bdf")
+font2 = bitmap_font.load_font("/fonts/Arial-Bold-24.bdf")
+#font_sizes = (0.5, 0.7, 0.9)
 
-
+# Approximate center lines for buttons A, B and C
+centers = (41, 147, 253)
 MAX_BATTERY_VOLTAGE = 4.0
 MIN_BATTERY_VOLTAGE = 3.2
-
 ebook=""
-
 page = 0
 font_size = 1
-
 inverted = False
-
+# scan files for HID scripts 
 ListHIDFiles = os.listdir("/hid/")
 hidfiles =[]
 count = 0
@@ -95,7 +122,7 @@ for n in ListHIDFiles:
             hidfiles.append((n.replace(".txt",""),count))
             count=count+1
 hidfiles.append(("EXIT",count))
-print(hidfiles)
+# scan files for badges files
 files = os.listdir("/badges/")
 bfiles = []
 count = 0
@@ -105,8 +132,7 @@ for n in files:
             bfiles.append((n.replace(".txt",""),count))
             count=count+1        
 bfiles.append(("EXIT",count))
-print(bfiles)
-#picfiles
+# can files for pictures files
 files = os.listdir("/images/")
 picfiles = []
 count = 0
@@ -116,7 +142,7 @@ for n in files:
             picfiles.append((n.replace(".bmp",""),count))
             count=count+1        
 picfiles.append(("EXIT",count))
-print(picfiles)
+# scan files for ebook/text files 
 files = os.listdir("/ebook/")
 ebfiles = []
 count = 0
@@ -126,7 +152,7 @@ for n in files:
             ebfiles.append((n.replace(".txt",""),count))
             count=count+1        
 ebfiles.append(("EXIT",count))
-print(ebfiles)
+# main menu with extra functions scan in app folder
 #fixed functions
 examples = [
     ("keyb", 0),
@@ -142,20 +168,13 @@ for n in ListFiles:
     if n[-3:]==".py":
         #need to impove, file to not show in menu
         #exlude secrets.py and of course code.py
-        if n!="secrets.py" and n!="code.py" and n!="launcher.py" and n[0:2]!="._":
+        # remove f**cking files made by Mac os ._
+        if n!="secrets.py" and n!="code.py"  and n[0:2]!="._":
             examples.append((n.replace(".py",""),count))
             count=count+1
 
-print(examples)
+# led off to tell init is done
 led.value = 0
-font_sizes = (0.5, 0.7, 0.9)
-
-# Approximate center lines for buttons A, B and C
-centers = (41, 147, 253)
-
-#MAX_PAGE = math.ceil(len(examples) / 3)
-
-
 # Battery measurement
 '''
 vbat_adc = machine.ADC(badger2040.PIN_BATTERY)
@@ -165,47 +184,11 @@ vref_en.init(machine.Pin.OUT)
 vref_en.value(0)
 
 
-display = badger2040.Badger2040()
-
 '''
 vbat_adc = analogio.AnalogIn(board.VBAT_SENSE)
 #vref_adc = analogio.AnalogIn(board.1V2_REF)
 vref_en = analogio.AnalogIn(board.VREF_POWER)
-# ********************************* DISPLAY ******************************
-try:
-    import displayio                  # release displayio for epd driver use
-    displayio.release_displays()      # thanks to Chris Parrot
-except:
-    print("No displayio , ok then it's alpha release")
-import digitalio
-import busio
-from adafruit_epd.epd import Adafruit_EPD
-from adafruit_epd.il0373 import Adafruit_IL0373
-# create the spi device and pins we will need
-try:
-    spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-    # board.SCLK renamed to board.SCK
-except:
-    spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
-    print("alpha release declare spi different")
-ecs = digitalio.DigitalInOut(board.INKY_CS)
-dc = digitalio.DigitalInOut(board.INKY_DC)
-srcs = None #digitalio.DigitalInOut(board.D10)    # can be None to use internal memory
-rst = digitalio.DigitalInOut(board.INKY_RST)    # can be None to not use this pin
-busy = digitalio.DigitalInOut(board.INKY_BUSY)   # can be None to not use this pin
 
-# give them all to our driver
-print("Creating display")
-display = Adafruit_IL0373(128, 296, spi,          # 2,9" badger 296x128 display
-                          cs_pin=ecs, dc_pin=dc, sramcs_pin=srcs,
-                          rst_pin=rst, busy_pin=busy)
-
-display.rotation = 3
-WHITE = 3
-BLACK = 0
-WIDTH = 296
-HEIGHT = 128
-# ************************************************** diplay init end
 def read_le(s):
     # as of this writting, int.from_bytes does not have LE support, DIY!
     result = 0
@@ -215,78 +198,6 @@ def read_le(s):
         shift += 8
     return result
 
-
-class BMPError(Exception):
-    pass
-
-
-def display_bitmap(epd, filename, x,y, deficon="file"):  # pylint: disable=too-many-locals, too-many-branches
-    try:
-        f = open(filename, "rb")  # pylint: disable=consider-using-with
-    except OSError:
-        print("Couldn't open file " + filename + " load default icon /assets/"+deficon+".bmp")
-        f = open("/assets/"+deficon+".bmp", "rb")
-        #return
-
-    #print("File opened")
-    try:
-        if f.read(2) != b"BM":  # check signature
-            raise BMPError("Not BitMap file")
-
-        bmpFileSize = read_le(f.read(4))
-        f.read(4)  # Read & ignore creator bytes
-
-        bmpImageoffset = read_le(f.read(4))  # Start of image data
-        headerSize = read_le(f.read(4))
-        bmpWidth = read_le(f.read(4))
-        bmpHeight = read_le(f.read(4))
-        flip = True
-        '''
-        print(
-            "Size: %d\nImage offset: %d\nHeader size: %d"
-            % (bmpFileSize, bmpImageoffset, headerSize)
-        )
-        print("Width: %d\nHeight: %d" % (bmpWidth, bmpHeight))
-        '''
-        if read_le(f.read(2)) != 1:
-            raise BMPError("Not singleplane")
-        bmpDepth = read_le(f.read(2))  # bits per pixel
-        #print("Bit depth: %d" % (bmpDepth))
-        if bmpDepth != 24:
-            raise BMPError("Not 24-bit")
-            pass
-        if read_le(f.read(2)) != 0:
-            raise BMPError("Compressed file")
-
-        #print("Image OK! Drawing...")
-
-        rowSize = (bmpWidth * 3 + 3) & ~3  # 32-bit line boundary
-
-        for row in range(bmpHeight):  # For each scanline...
-            if flip:  # Bitmap is stored bottom-to-top order (normal BMP)
-                pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize
-            else:  # Bitmap is stored top-to-bottom
-                pos = bmpImageoffset + row * rowSize
-
-            # print ("seek to %d" % pos)
-            f.seek(pos)
-            rowdata = f.read(3 * bmpWidth)
-            for col in range(bmpWidth):
-                b, g, r = rowdata[3 * col : 3 * col + 3]  # BMP files store RGB in BGR
-                if r < 0x80 and g < 0x80 and b < 0x80:
-                    epd.pixel(col + x , row + y, BLACK)
-                elif r >= 0x80 and g >= 0x80 and b >= 0x80:
-                    pass  # epd.pixel(row, col, Adafruit_EPD.WHITE)
-                elif r >= 0x80:
-                    epd.pixel(col + x , row + y, BLACK)
-    except OSError:
-        print("Couldn't read file")
-    except BMPError as e:
-        print("Failed to parse BMP: " + e.args[0])
-    finally:
-        f.close()
-    #print("Finished drawing")
-# ******************************* END BMP iamge display functions
 def map_value(input, in_min, in_max, out_min, out_max):
     return (((input - in_min) * (out_max - out_min)) / (in_max - in_min)) + out_min
 
@@ -335,48 +246,78 @@ def draw_disk_usage(x):
     f_total_used = f_total_size - f_total_free
     f_used = 100 / f_total_size * f_total_used
     # f_free = 100 / f_total_size * f_total_free
-    display.rect(x + 10, 3, 80, 10, WHITE)
-    display.fill_rect(x + 11, 4, 78, 8, BLACK)
-    display.fill_rect(x + 12, 5, int(76 / 100.0 * f_used), 6, WHITE)
-    display.text("{:.2f}%".format(f_used), x + 91, 4, WHITE)
+    batbg = Rect(x + 10, 3, 80, 10, fill=BLACK, outline=WHITE)
+    batlvl1 = Rect(x + 11, 4, 78, 8, fill=BLACK, outline=BLACK)
+    batlvl2 = Rect(x + 12, 5, int(76 / 100.0 * f_used), 6, fill=WHITE, outline=WHITE)
+    battxt = label.Label(font=terminalio.FONT, text="{:.0f}%".format(f_used), color=WHITE, scale=1)
+    battxt.x = x + 91
+    battxt.y = 7
+    mainScreen.append(batbg)     #ID3
+    mainScreen.append(batlvl1)   #ID4
+    mainScreen.append(batlvl2)   #ID5
+    mainScreen.append(battxt)    #ID6
+
+# ********************************* groups definition ******************************
+mainScreen = displayio.Group()
+whiteBG = vectorio.Rectangle(pixel_shader=palette, width=display.width+1, height=display.height, x=0, y=0)
+topbar = Rect(0, 0, display.width, 16, fill=BLACK, outline=BLACK)
+title = label.Label(font=terminalio.FONT, text="BadgerOS CPython", color=WHITE, scale=1)
+title.y = 7
+title.x = 3
+
+mainScreen.append(whiteBG) #ID0
+mainScreen.append(topbar)  #ID1
+mainScreen.append(title)   #ID2
+draw_disk_usage(90)
+ebgroup = displayio.Group()
+# *******************************************************************************
 
 
 def render(tablist, defaulticon="file"):
-    # clear display
-    print(defaulticon)
-    print(tablist)
+    groupbefore=len(mainScreen)
     MAX_PAGE = math.ceil(len(tablist) / 3)
     led.value = 1
-    display.fill(WHITE)
     max_icons = min(3, len(tablist[(page * 3):]))
     for i in range(max_icons):
         x = centers[i]
-        label, icon = tablist[i + (page * 3)]
-        file = label
-        display_bitmap(display, "/assets/"+file+".bmp", x-32 , 24, defaulticon)
+        labels, icon = tablist[i + (page * 3)]
+        file = labels
+        try:
+            image, palette = adafruit_imageload.load("/assets/"+file+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+        except:
+            image, palette = adafruit_imageload.load("/assets/"+defaulticon+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+        
+        tile_grid = displayio.TileGrid(image, pixel_shader=palette)
+        tile_grid.x = x-32
+        tile_grid.y = 24
+        mainScreen.append(tile_grid)
+        labelicn = label.Label(font, text=labels[:5].upper(), color=BLACK, scale=1)
         w = 50 # 30 seem correct for default font 5x8
-        display.text(label[:5], x - int(w / 2), 16 + 80, BLACK, font_name='font5x8.bin', size=2)
-
+        labelicn.x =  x - int(w / 2)
+        labelicn.y =  16 + 80
+        mainScreen.append(labelicn)
+    
     for i in range(MAX_PAGE):
         x = 286
         y = int((128 / 2) - (MAX_PAGE * 10 / 2) + (i * 10))
-        display.fill_rect(x, y, 8, 8, BLACK)
         if page != i:
-            display.fill_rect(x + 1, y + 1, 6, 6, WHITE)
-
-    display.fill_rect(0, 0, WIDTH, 16, BLACK)
-    draw_disk_usage(90)
-    draw_battery(get_battery_level(), WIDTH - 22 - 3, 3)
-    display.text("BadgerOS CPython", 3, 4,  WHITE)
-    
-    display.display()
+            spot = Rect(x, y, 8, 8, fill=WHITE, outline=BLACK)
+            mainScreen.append(spot)
+        else:
+            spot = Rect(x, y, 8, 8, fill=BLACK, outline=BLACK)
+            mainScreen.append(spot)    
+    display.show(mainScreen)
+    while display.busy==True:
+        time.sleep(0.01)     
+    display.refresh()
+    groupafter=len(mainScreen)
+    for i in range(groupbefore,groupafter):
+        mainScreen.pop()
     led.value = 0
 
 
 def launch(file):
     fichier = "/apps/"+file+".py"
-    print("file :" +  file + " --> " + fichier)
-    
     for k in locals().keys():
         if k not in ("gc", "file", "machine"):
             del locals()[k]
@@ -385,8 +326,6 @@ def launch(file):
         __import__(fichier)  # Try to import _[file] (drop underscore prefix)
     except ImportError:
         pass
-        #__import__(file)      # Failover to importing [_file]
-    #machine.reset()           # Exit back to launcher
     import microcontroller
     microcontroller.reset()
 
@@ -462,6 +401,7 @@ def launch_example(index):
     if (page * 3) + index == 2:
         # show image routine
         imgexit=False
+        oldpage=page
         while button_b.value==True:
             time.sleep(0.01)
         print("image zone")
@@ -488,7 +428,7 @@ def launch_example(index):
             if button_down.value==True:
                 imgbutton(5)            
             time.sleep(0.01)
-        page=0
+        page=oldpage
         render(examples,"file")
         return         
     if (page * 3) + index == 3:
@@ -577,7 +517,6 @@ def ebselect(index):
     name = ebfiles[(page * 3) + index][0]
     print("/ebook/"+name+".txt")
     if name == "EXIT":
-        #hidexit=True
         return False
     else:
         #wait release
@@ -593,6 +532,8 @@ def readebook(efile):
     global next_page, prev_page,last_offset,current_page, ebook
     print("go to read" + efile + " ebook")
     ebook = open(efile, "r")
+    #goup is ebgroup, draw frame only one time :)
+    draw_frame()
     while True:
         # Was the next page button pressed?
         if next_page:
@@ -602,7 +543,7 @@ def readebook(efile):
             if current_page > len(offsets):
                 offsets.append(ebook.tell())  # Add its start position to the offsets list
             led.value=1
-            draw_frame()
+            #draw_frame()
             render_page()
             led.value=0
             next_page = False  # Clear the next page button flag
@@ -613,12 +554,10 @@ def readebook(efile):
                 current_page -= 1
                 ebook.seek(offsets[current_page - 1])  # Retrieve the start position of the last page
                 led.value=1
-                draw_frame()
+                #draw_frame()
                 render_page()
                 led.value=0
             prev_page = False  # Clear the prev page button flag
-
-
         if button_a.value==True:
             return True
         if button_b.value==True:
@@ -637,7 +576,6 @@ def readebook(efile):
 
 def imgbutton(pin):
     global page, font_size, inverted
-
     #if button_user.value():  # User button is NOT held down
     if pin == 1:
         if img(0)==False:
@@ -649,12 +587,12 @@ def imgbutton(pin):
         if img(2)==False:
             return False
     if pin == 4:
-        MAX_PAGE = math.ceil(len(bfiles) / 3)
+        MAX_PAGE = math.ceil(len(picfiles) / 3)
         if page > 0:
             page -= 1
             render(picfiles,"bmp")
     if pin == 5:
-        MAX_PAGE = math.ceil(len(bfiles) / 3)
+        MAX_PAGE = math.ceil(len(picfiles) / 3)
         if page < MAX_PAGE - 1:
             page += 1
             render(picfiles,"bmp")
@@ -663,7 +601,6 @@ def img(index):
     name = picfiles[(page * 3) + index][0]
     print("/image/"+name+".bmp")
     if name == "EXIT":
-        #hidexit=True
         return False
     else:
         #wait release
@@ -671,9 +608,16 @@ def img(index):
             time.sleep(0.01) 
         led.value=1
         # ici
-        display.fill(WHITE)
-        display_bitmap(display, "/images/"+name+".bmp", 0 , 0, "bmp")
-        display.display()
+        mainScreen.append(Rect(0, 0, display.width +1, display.height, fill=WHITE, outline=WHITE))
+        image, palette = adafruit_imageload.load("/images/"+name+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+        tile_grid = displayio.TileGrid(image, pixel_shader=palette)
+        tile_grid.x = 0
+        tile_grid.y = 0
+        mainScreen.append(tile_grid)
+        display.show(mainScreen)
+        display.refresh()
+        mainScreen.pop() #kill pic
+        mainScreen.pop() #kill whiteBG
         led.value=0
         #wait a a b or c button
         while button_a.value==False and button_b.value==False and button_c.value==False:
@@ -687,7 +631,6 @@ def img(index):
 
 def badgebutton(pin):
     global page, font_size, inverted
-
     #if button_user.value():  # User button is NOT held down
     if pin == 1:
         if badge(0)==False:
@@ -746,7 +689,6 @@ def hid(index):
 
 def hidbutton(pin):
     global page, font_size, inverted
-
     #if button_user.value():  # User button is NOT held down
     if pin == 1:
         if hid(0)==False:
@@ -796,12 +738,25 @@ def button(pin):
             render(examples)
 
 def draw_badge(file):
-    logo = file
+    #Constants cans be customised
+    IMAGE_WIDTH = 104
+    COMPANY_HEIGHT = 40
+    DETAILS_HEIGHT = 20
+    NAME_HEIGHT = HEIGHT - COMPANY_HEIGHT - (DETAILS_HEIGHT * 2) - 2
+    TEXT_WIDTH = WIDTH - IMAGE_WIDTH - 2
+    LEFT_PADDING = 5
+    NAME_PADDING = 10
+    DETAIL_SPACING = 20
+    OVERLAY_BORDER = 40
+    OVERLAY_SPACING = 20    
+    badgescn = displayio.Group()
     try:
-        f = open("/badges/"+file+".bmp","r")
-        f.close()
+        image, palette = adafruit_imageload.load("/badges/"+file+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
     except:
-        logo = "user"
+        image, palette = adafruit_imageload.load("/badges/user.bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+    tile_grid = displayio.TileGrid(image, pixel_shader=palette)
+    tile_grid.x = display.width - IMAGE_WIDTH 
+    tile_grid.y = 0    
     f = open("/badges/"+file+".txt","r")
     company = f.readline()
     name = f.readline()
@@ -810,100 +765,92 @@ def draw_badge(file):
     detail2_title = f.readline()
     detail2_text = f.readline()
     f.close()    
-    #Constants cans be customised
-    IMAGE_WIDTH = 104
-
-    COMPANY_HEIGHT = 40
-    DETAILS_HEIGHT = 20
-    NAME_HEIGHT = HEIGHT - COMPANY_HEIGHT - (DETAILS_HEIGHT * 2) - 2
-    TEXT_WIDTH = WIDTH - IMAGE_WIDTH - 1
-    LEFT_PADDING = 10
-    NAME_PADDING = 20
-    DETAIL_SPACING = 20
-    OVERLAY_BORDER = 40
-    OVERLAY_SPACING = 20
     # clear scren (black)
-    display.fill(BLACK)
+    badgescn.append(Rect(0, 0, display.width+1, display.height, fill=BLACK, outline=BLACK))   #ID 
     # Draw a border around the image
-    display.line(WIDTH - IMAGE_WIDTH, 0, WIDTH - 1, 0, WHITE)
-    display.line(WIDTH - IMAGE_WIDTH, 0, WIDTH - IMAGE_WIDTH, HEIGHT - 1, WHITE)
-    display.line(WIDTH - IMAGE_WIDTH, HEIGHT - 1, WIDTH - 1, HEIGHT - 1, WHITE)
-    display.line(WIDTH - 1, 0, WIDTH - 1, HEIGHT - 1, WHITE)
+    badgescn.append(Line(WIDTH - IMAGE_WIDTH, 0, WIDTH - 1, 0, WHITE))
+    badgescn.append(Line(WIDTH - IMAGE_WIDTH, 0, WIDTH - IMAGE_WIDTH, HEIGHT - 1, WHITE))
+    badgescn.append(Line(WIDTH - IMAGE_WIDTH, HEIGHT - 1, WIDTH - 1, HEIGHT - 1, WHITE))
+    badgescn.append(Line(WIDTH - 1, 0, WIDTH - 1, HEIGHT - 1, WHITE))
     # Draw the company
-    display.text(company, LEFT_PADDING, (COMPANY_HEIGHT // 2) -10,WHITE,font_name='font5x8.bin', size=2 )
+    ctxt=label.Label(font=font2, text=company, color=WHITE, scale=1)
+    ctxt.x = LEFT_PADDING
+    ctxt.y = (COMPANY_HEIGHT // 2) 
+    badgescn.append(ctxt)
 
     # Draw a white background behind the name
-    display.fill_rect(1, COMPANY_HEIGHT + 1, TEXT_WIDTH, NAME_HEIGHT, WHITE)
-
+    badgescn.append(Rect(1, COMPANY_HEIGHT + 1, TEXT_WIDTH, NAME_HEIGHT, fill=WHITE, outline=WHITE))
     # Draw the name, scaling it based on the available width
-    fsize = 3
-    name_length = len(name)*(fsize*6)
+    fsize = 3 
+    name_length = len(name)*(fsize*12)
     if name_length >= (TEXT_WIDTH - NAME_PADDING):
         fsize=2
         name_length = len(name)*(fsize*6)
         if name_length >= (TEXT_WIDTH - NAME_PADDING):
             fsize=1
-            name_length = len(name)*(fsize*6)            
-    display.text(name, (TEXT_WIDTH - name_length) // 2, (NAME_HEIGHT // 2) + COMPANY_HEIGHT - 5, BLACK, font_name='font5x8.bin', size=fsize)
-
+            name_length = len(name)*(fsize*6)  
+    name_length = len(name)*18
+    ntxt=label.Label(font=font2, text=name, color=BLACK, scale=1)
+    ntxt.x = (TEXT_WIDTH - name_length) // 2
+    ntxt.y = (NAME_HEIGHT // 2) + COMPANY_HEIGHT 
+    badgescn.append(ntxt)
     # Draw a white backgrounds behind the details
-    display.fill_rect(1, HEIGHT - DETAILS_HEIGHT * 2, TEXT_WIDTH, DETAILS_HEIGHT - 1, WHITE)
-    display.fill_rect(1, HEIGHT - DETAILS_HEIGHT, TEXT_WIDTH, DETAILS_HEIGHT - 1, WHITE)
-
+    badgescn.append(Rect(1, HEIGHT - DETAILS_HEIGHT * 2, TEXT_WIDTH, DETAILS_HEIGHT - 1, fill=WHITE, outline=WHITE))
+    badgescn.append(Rect(1, HEIGHT - DETAILS_HEIGHT, TEXT_WIDTH, DETAILS_HEIGHT - 1, fill=WHITE, outline=WHITE))
     # Draw the first detail's title and text
-    name_length = len(detail1_title)*5
-    display.text(detail1_title, LEFT_PADDING, HEIGHT - ((DETAILS_HEIGHT * 3) // 2) -5, BLACK, font_name='font5x8.bin', size=1)
-    display.text(detail1_text,  LEFT_PADDING + name_length + DETAIL_SPACING, HEIGHT - ((DETAILS_HEIGHT * 3) // 2) -5,  BLACK, font_name='font5x8.bin', size=1)
-
+    name_length = len(detail1_title)*8
+    ntxt=label.Label(font=font, text=detail1_title, color=BLACK, scale=1)
+    ntxt.x = LEFT_PADDING 
+    ntxt.y = HEIGHT - ((DETAILS_HEIGHT * 3) // 2) 
+    badgescn.append(ntxt)    
+    ntxt=label.Label(font=font, text=detail1_text, color=BLACK, scale=1)
+    ntxt.x = LEFT_PADDING + name_length + DETAIL_SPACING
+    ntxt.x = 97
+    ntxt.y = HEIGHT - ((DETAILS_HEIGHT * 3) // 2) 
+    badgescn.append(ntxt)    
     # Draw the second detail's title and text
-    name_length = len(detail2_title)*5
-    display.text(detail2_title, LEFT_PADDING, HEIGHT - (DETAILS_HEIGHT // 2) -5, BLACK, font_name='font5x8.bin', size=1)
-    display.text(detail2_text, LEFT_PADDING + name_length + DETAIL_SPACING, HEIGHT - (DETAILS_HEIGHT // 2) -5, BLACK, font_name='font5x8.bin', size=1)
+    name_length = len(detail2_title)*8
+    ntxt=label.Label(font=font, text=detail2_title, color=BLACK, scale=1)
+    ntxt.x = LEFT_PADDING
+    ntxt.y = HEIGHT - (DETAILS_HEIGHT // 2) 
+    badgescn.append(ntxt)      
+    ntxt=label.Label(font=font, text=detail2_text, color=BLACK, scale=1)
+    ntxt.x = LEFT_PADDING + name_length + DETAIL_SPACING
+    ntxt.x = 97
+    ntxt.y = HEIGHT - (DETAILS_HEIGHT // 2) 
+    badgescn.append(ntxt)      
     # Draw badge image
-    display.fill_rect(WIDTH - IMAGE_WIDTH , 0, WIDTH, HEIGHT, WHITE)
-    print(logo)
-    display_bitmap(display, "/badges/"+logo+".bmp", WIDTH - IMAGE_WIDTH , 0)
-    display.display()
-
-ARROW_THICKNESS = 3
-ARROW_WIDTH = 18
-ARROW_HEIGHT = 14
-ARROW_PADDING = 2
-TEXT_PADDING = 4
-TEXT_SIZE = 0.5
-TEXT_SPACING = int(34 * TEXT_SIZE)
-TEXT_WIDTH = WIDTH - TEXT_PADDING - TEXT_PADDING - ARROW_WIDTH
-
+    badgescn.append(tile_grid)
+    display.show(badgescn)
+    display.refresh()
+    for i in range(0, len(badgescn)):
+        badgescn.pop()
+        
 # Draw a upward arrow
 def draw_up(x, y, width, height, thickness, padding):
     border = (thickness // 4) + padding
-    display.line(x + border, y + height - border,
-                 x + (width // 2), y + border, WHITE)
-    display.line(x + (width // 2), y + border,
-                 x + width - border, y + height - border, WHITE)
+    ebgroup.append(Line(x + border, y + height - border,
+                 x + (width // 2), y + border, WHITE))
+    ebgroup.append(Line(x + (width // 2), y + border,
+                 x + width - border, y + height - border, WHITE))
 # Draw a downward arrow
 def draw_down(x, y, width, height, thickness, padding):
     border = (thickness // 2) + padding
-    display.line(x + border, y + border,
-                 x + (width // 2), y + height - border, WHITE)
-    display.line(x + (width // 2), y + height - border,
-                 x + width - border, y + border, WHITE)
+    ebgroup.append(Line(x + border, y + border,
+                 x + (width // 2), y + height - border, WHITE))
+    ebgroup.append(Line(x + (width // 2), y + height - border,
+                 x + width - border, y + border, WHITE))
 
 # Draw the frame of the text reader
 def draw_frame():
-    display.fill(WHITE)
-    display.fill_rect(WIDTH - ARROW_WIDTH, 0, ARROW_WIDTH, HEIGHT, BLACK)
-    if current_page > 1:
-        draw_up(WIDTH - ARROW_WIDTH, (HEIGHT // 4) - (ARROW_HEIGHT // 2),
+    ebgroup.append(Rect(0, 0, display.width +1, display.height, fill=WHITE, outline=WHITE))
+    ebgroup.append(Rect(WIDTH - ARROW_WIDTH, 0, ARROW_WIDTH +1, HEIGHT, fill=BLACK, outline=BLACK))
+    draw_up(WIDTH - ARROW_WIDTH, (HEIGHT // 4) - (ARROW_HEIGHT // 2),
                 ARROW_WIDTH, ARROW_HEIGHT, ARROW_THICKNESS, ARROW_PADDING)
     draw_down(WIDTH - ARROW_WIDTH, ((HEIGHT * 3) // 4) - (ARROW_HEIGHT // 2),
               ARROW_WIDTH, ARROW_HEIGHT, ARROW_THICKNESS, ARROW_PADDING)
 
-next_page = True
-prev_page = False
-last_offset = 0
-current_page = 0
-offsets = []
+
 def ebbutton(pin):
     global next_page, prev_page, change_font_size, change_font
     if pin == 5:
@@ -917,12 +864,12 @@ def ebbutton(pin):
 
 def render_page():
     global next_page, prev_page, change_font_size, change_font, ebook
+    inipop = len(ebgroup)
     row = 0
     line = ""
     pos = ebook.tell()
     next_pos = pos
     add_newline = False
-    #display.font(FONTS[0])
     led.value=1
     while True:
         # Read a full line and split it into words
@@ -968,10 +915,10 @@ def render_page():
 
             # Yes, so write out the line prior to the append
             print(line)
-            #display.pen(0)
-            #display.thickness(FONT_THICKNESSES[0])
-            display.text(line, TEXT_PADDING, (row * TEXT_SPACING) + (TEXT_SPACING // 2) + TEXT_PADDING, BLACK)
-
+            title = label.Label(font=terminalio.FONT, text=line, color=BLACK, scale=1)
+            title.y = (row * TEXT_SPACING) + (TEXT_SPACING // 2) + TEXT_PADDING
+            title.x = TEXT_PADDING
+            ebgroup.append(title)
             # Clear the line and move on to the next row
             line = ""
             row += 1
@@ -979,8 +926,12 @@ def render_page():
             # Have we reached the end of the page?
             if (row * TEXT_SPACING) + TEXT_SPACING >= HEIGHT:
                 print("+++++")
-                display.display()
-
+                endpop=len(ebgroup)
+                display.show(ebgroup)
+                display.refresh()
+                # pop lines for later :)
+                for lp in range(inipop,endpop):
+                    ebgroup.pop()
                 # Reset the position to the start of the word that made this line too long
                 ebook.seek(pos)
                 return
@@ -995,7 +946,14 @@ def render_page():
                 row += 1
                 if (row * TEXT_SPACING) + TEXT_SPACING >= HEIGHT:
                     print("+++++")
-                    display.display()
+                    endpop=len(ebgroup)
+                    display.show(ebgroup)
+                    while display.busy==True:
+                        time.sleep(0.01)
+                    display.refresh()
+                    # pop lines for later :)
+                    for lp in range(inipop,endpop):
+                        ebgroup.pop()
                     return
                 add_newline = False
         else:
