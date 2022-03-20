@@ -12,13 +12,17 @@ import gc
 import os
 import math
 import microcontroller
+import digitalio
 import board
+#hack set pin10 3V3 to high
+pin3v3 = digitalio.DigitalInOut(microcontroller.pin.GPIO10)
+pin3v3.direction = digitalio.Direction.OUTPUT
+pin3v3.value = True
 import analogio
 import time
 import usb_hid
 from adafruit_hid.keyboard import Keyboard
 import adafruit_ducky
-import digitalio
 import busio
 import displayio
 import terminalio
@@ -40,18 +44,26 @@ palette = displayio.Palette(1)
 palette[0] = 0xFFFFFF
 WHITE = 0xFFFFFF
 BLACK = 0x000000
-keyboard = Keyboard(usb_hid.devices)
-if layout=="fr": 
-    from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
-    keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
-else:
-    from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
-    keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
+usb=False
+try:
+    keyboard = Keyboard(usb_hid.devices)
+    if layout=="fr": 
+        from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
+        keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
+    else:
+        from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
+        keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
+    usb=True
+except:
+    print("not connected on usb")
 def callduck(filename):
-    duck = adafruit_ducky.Ducky(filename, keyboard, keyboard_layout)    
-    result = True
-    while result is not False:
-        result = duck.loop()
+    if usb==True:
+        duck = adafruit_ducky.Ducky(filename, keyboard, keyboard_layout)    
+        result = True
+        while result is not False:
+            result = duck.loop()
+    else:
+        result = "No usb"
     return result
 # button and led init
 from digitalio import DigitalInOut, Direction, Pull
@@ -107,8 +119,9 @@ font3=terminalio.FONT
 
 # Approximate center lines for buttons A, B and C
 centers = (41, 147, 253)
-MAX_BATTERY_VOLTAGE = 4.0
-MIN_BATTERY_VOLTAGE = 3.2
+MAX_BATTERY_VOLTAGE = 400
+MIN_BATTERY_VOLTAGE = 320
+batlvl = analogio.AnalogIn(board.VBAT_SENSE)
 ebook=""
 page = 0
 font_size = 1
@@ -186,7 +199,7 @@ vref_en.value(0)
 
 
 '''
-vbat_adc = analogio.AnalogIn(board.VBAT_SENSE)
+#vbat_adc = analogio.AnalogIn(board.VBAT_SENSE)
 #vref_adc = analogio.AnalogIn(board.1V2_REF)
 vref_en = analogio.AnalogIn(board.VREF_POWER)
 
@@ -219,23 +232,36 @@ def get_battery_level():
     '''
     need to be coded to read battery level in circuitpython , later , for now return fake value
     '''
+    batlevel = label.Label(font=terminalio.FONT, text=str(batlvl.value), color=WHITE, scale=1)
+    batlevel.y = 7
+    batlevel.x = 220
+    mainScreen.append(batlevel)
     return 3
 
 
 def draw_battery(level, x, y):
-    display.rect(x, y, 19, 10, WHITE)
-    display.rect(x + 19, y + 3, 2, 4, WHITE)
-    display.rect(x + 1, y + 1, 17, 8, BLACK)
+    #mainScreen.append(Rect(x + 10, 3, 80, 10, fill=BLACK, outline=WHITE))
+    #display.rect(x, y, 19, 10, WHITE)
+    mainScreen.append(Rect(x, y, 19, 10, fill=WHITE, outline=WHITE))
+    #display.rect(x + 19, y + 3, 2, 4, WHITE)
+    mainScreen.append(Rect(x + 19, y + 3, 2, 4, fill=WHITE, outline=WHITE))
+    #display.rect(x + 1, y + 1, 17, 8, BLACK)
+    mainScreen.append(Rect(x + 1, y + 1, 17, 8, fill=BLACK, outline=BLACK))
     if level < 1:
-        display.line(x + 3, y, x + 3 + 10, y + 10, BLACK)
-        display.line(x + 3 + 1, y, x + 3 + 11, y + 10, BLACK)
-        display.line(x + 2 + 2, y - 1, x + 4 + 12, y + 11, WHITE)
-        display.line(x + 2 + 3, y - 1, x + 4 + 13, y + 11, WHITE)
+        mainScreen.append(Line(x + 3, y, x + 3 + 10, y + 10, BLACK))
+        #display.line(x + 3, y, x + 3 + 10, y + 10, BLACK)
+        mainScreen.append(Line(x + 3 + 1, y, x + 3 + 11, y + 10, BLACK))
+        #display.line(x + 3 + 1, y, x + 3 + 11, y + 10, BLACK)
+        mainScreen.append(Line(x + 2 + 2, y - 1, x + 4 + 12, y + 11, WHITE))
+        #display.line(x + 2 + 2, y - 1, x + 4 + 12, y + 11, WHITE)
+        mainScreen.append(Line(x + 2 + 3, y - 1, x + 4 + 13, y + 11, WHITE))
+        #display.line(x + 2 + 3, y - 1, x + 4 + 13, y + 11, WHITE)
         return
     # Battery Bars
     for i in range(4):
         if level / 4 > (1.0 * i) / 4:
-            display.fill_rect(i * 4 + x + 2, y + 2, 3, 6, WHITE)
+            mainScreen.append(Rect(i * 4 + x + 2, y + 2, 3, 6, fill=WHITE, outline=WHITE))
+            #display.fill_rect(i * 4 + x + 2, y + 2, 3, 6, WHITE)
 
 
 def draw_disk_usage(x):
@@ -307,6 +333,7 @@ def render(tablist, defaulticon="file"):
         else:
             spot = Rect(x, y, 8, 8, fill=BLACK, outline=BLACK)
             mainScreen.append(spot)    
+    draw_battery(get_battery_level(), WIDTH - 22 - 3, 3)
     display.show(mainScreen)
     while display.busy==True:
         time.sleep(0.01)     
@@ -510,6 +537,8 @@ def launch_example(index):
         labelt.y =  y
         mainScreen.append(labelt)
         display.show(mainScreen)
+        while display.busy==True:
+            time.sleep(0.01)         
         display.refresh()
         new=len(mainScreen)
         for i in range(old, new):
@@ -1006,90 +1035,91 @@ def render_page():
             line = appended_line
             pos = next_pos
 
-# instant rubber ducky function
+# instant rubber ducky function if connected on usb at boot off course
 # try if button a b c ... pressed at boot
 # launch script with name of button if present a.txt b.txt etc ..
 # special pentest
-pressed=False
-if button_a.value==True:
-    led.value=1
-    print("wait release a button to type text")
-    while button_a.value==True:
-        pass   
-    pressed=True
-    try:
-        x = open("a.txt","r")
-        x.close()
-        print("running script in a.txt")
-        callduck("a.txt")
-    except:
-        print("button a pressed but no a.txt present, continue ...")
-    led.value=0
-if button_b.value==True:
-    led.value=1
-    print("wait release b button to type text")
-    while button_b.value==True:
-        pass   
-    pressed=True
-    try:
-        x = open("b.txt","r")
-        x.close()
-        print("running script in b.txt")
-        callduck("b.txt")
-    except:
-        print("button b pressed but no b.txt present, continue ...")
-    led.value=0
-if button_c.value==True:
-    led.value=1
-    print("wait release c button to type text")
-    while button_c.value==True:
-        pass   
-    pressed=True
-    try:
-        x = open("c.txt","r")
-        x.close()
-        print("running script in c.txt")
-        callduck("c.txt")
-    except:
-        print("button c pressed but no c.txt present, continue ...")
-    led.value=0
-if button_up.value==True:
-    led.value=1
-    print("wait release up button to type text")
-    while button_up.value==True:
-        pass   
-    pressed=True
-    try:
-        x = open("up.txt","r")
-        x.close()
-        print("running script in up.txt")
-        callduck("up.txt")
-    except:
-        print("button up pressed but no up.txt present, continue ...")
-    led.value=0    
-if button_down.value==True:
-    led.value=1
-    print("wait release down button to type text")
-    while button_down.value==True:
-        pass   
-    pressed=True
-    try:
-        x = open("down.txt","r")
-        x.close()
-        print("running script in down.txt")
-        callduck("down.txt")        
-    except:
-        print("button down pressed buy no down.txt present, continue ...")
-    led.value=0   
-
-if pressed==True:
-    # ok need to press a key to continue , or unplug to not change display
-    print("Now you can unplug Badger2040 or press a button to continue on launcher")
-    while button_a.value==False and button_b.value==False and button_c.value==False and button_up.value==False and button_down.value==False:
+if usb==True:
+    pressed=False
+    if button_a.value==True:
         led.value=1
-        time.sleep(0.5)
+        print("wait release a button to type text")
+        while button_a.value==True:
+            pass   
+        pressed=True
+        try:
+            x = open("a.txt","r")
+            x.close()
+            print("running script in a.txt")
+            callduck("a.txt")
+        except:
+            print("button a pressed but no a.txt present, continue ...")
         led.value=0
-        time.sleep(0.5)
+    if button_b.value==True:
+        led.value=1
+        print("wait release b button to type text")
+        while button_b.value==True:
+            pass   
+        pressed=True
+        try:
+            x = open("b.txt","r")
+            x.close()
+            print("running script in b.txt")
+            callduck("b.txt")
+        except:
+            print("button b pressed but no b.txt present, continue ...")
+        led.value=0
+    if button_c.value==True:
+        led.value=1
+        print("wait release c button to type text")
+        while button_c.value==True:
+            pass   
+        pressed=True
+        try:
+            x = open("c.txt","r")
+            x.close()
+            print("running script in c.txt")
+            callduck("c.txt")
+        except:
+            print("button c pressed but no c.txt present, continue ...")
+        led.value=0
+    if button_up.value==True:
+        led.value=1
+        print("wait release up button to type text")
+        while button_up.value==True:
+            pass   
+        pressed=True
+        try:
+            x = open("up.txt","r")
+            x.close()
+            print("running script in up.txt")
+            callduck("up.txt")
+        except:
+            print("button up pressed but no up.txt present, continue ...")
+        led.value=0    
+    if button_down.value==True:
+        led.value=1
+        print("wait release down button to type text")
+        while button_down.value==True:
+            pass   
+        pressed=True
+        try:
+            x = open("down.txt","r")
+            x.close()
+            print("running script in down.txt")
+            callduck("down.txt")        
+        except:
+            print("button down pressed buy no down.txt present, continue ...")
+        led.value=0   
+
+    if pressed==True:
+        # ok need to press a key to continue , or unplug to not change display
+        print("Now you can unplug Badger2040 or press a button to continue on launcher")
+        while button_a.value==False and button_b.value==False and button_c.value==False and button_up.value==False and button_down.value==False:
+            led.value=1
+            time.sleep(0.5)
+            led.value=0
+            time.sleep(0.5)
 
 
 #let's display something 
