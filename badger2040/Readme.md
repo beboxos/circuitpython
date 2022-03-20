@@ -12,6 +12,12 @@ video démo on youtube : [clic on this link ](https://www.youtube.com/watch?v=mA
 
 ![anim](pics/badgeranim.gif)
 
+## Update March 21, 2022:
+a big thank you to Chris Parrott for his help, we can now fix the pin 3V3 (GPIO10) to high. 
+fixed a bug where the HID was crashing at boot if not connected to the USB (logical) now at boot we test if connected or not to the usb to disable the HID features (to reactivate reboot).
+
+Warning: on battery press a button for (about 20 sec to wake up the badge) to put it in standby and save battery. press reset. The badge will wake up by itself if you connect it to a usb
+
 ## Update March 17, 2022:
 all the code has been rewritten to take into account the use of Adafruit DisplayIO libraries (with management of texts, 4 bits black & white BMP images, and also shapes). For the moment I haven't activated the battery display (I have a problem on my badger, it doesn't seem to work on battery and I haven't found yet why (maybe my device has a defect).
 
