@@ -22,7 +22,7 @@ Warning: on battery press a button for (about 20 sec to wake up the badge) to pu
 all the code has been rewritten to take into account the use of Adafruit DisplayIO libraries (with management of texts, 4 bits black & white BMP images, and also shapes). For the moment I haven't activated the battery display (I have a problem on my badger, it doesn't seem to work on battery and I haven't found yet why (maybe my device has a defect).
 
 ## todo: 
-management of the battery level.
+management of the battery level. (work in progress 21.03.2022)
 
 ~~the "info" part~~ : done 17.03.2022<cr/>
 
