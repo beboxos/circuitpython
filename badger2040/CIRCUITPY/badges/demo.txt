@@ -4,3 +4,7 @@ RP2040
 2MB Flash
 E ink
 296x128px
++33123456789
++33611223344
+email@provider.net
+Https://www.homepage.net

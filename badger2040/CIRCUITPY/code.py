@@ -8,25 +8,14 @@ change log : add info
 '''
 #HID init
 layout = "fr" # fr or us
-import gc
-import os
-import math
-import microcontroller
-import digitalio
-import board
+import gc, os , math, microcontroller, digitalio, board
 #hack set pin10 3V3 to high
 pin3v3 = digitalio.DigitalInOut(microcontroller.pin.GPIO10)
 pin3v3.direction = digitalio.Direction.OUTPUT
 pin3v3.value = True
-import analogio
-import time
-import usb_hid
+import analogio, time, usb_hid
 from adafruit_hid.keyboard import Keyboard
-import adafruit_ducky
-import busio
-import displayio
-import terminalio
-import vectorio
+import adafruit_ducky, busio, displayio , terminalio , vectorio
 from adafruit_display_text import label
 from adafruit_bitmap_font import bitmap_font
 import adafruit_imageload
@@ -36,15 +25,18 @@ from adafruit_display_shapes.roundrect import RoundRect
 from adafruit_display_shapes.triangle import Triangle
 from adafruit_display_shapes.line import Line
 from adafruit_display_shapes.polygon import Polygon
-from adafruit_epd.epd import Adafruit_EPD
-from adafruit_epd.il0373 import Adafruit_IL0373
-display =  board.DISPLAY
+import adafruit_miniqr
+display = board.DISPLAY
 display.rotation = 270
 palette = displayio.Palette(1)
 palette[0] = 0xFFFFFF
 WHITE = 0xFFFFFF
 BLACK = 0x000000
 usb=False
+badgescn = displayio.Group()
+showqr=False
+IMAGE_WIDTH = 104
+IMAGE_HEIGHT = 128
 try:
     keyboard = Keyboard(usb_hid.devices)
     if layout=="fr": 
@@ -231,8 +223,10 @@ def get_battery_level():
     #return int(map_value(vbat, MIN_BATTERY_VOLTAGE, MAX_BATTERY_VOLTAGE, 0, 4))
     '''
     need to be coded to read battery level in circuitpython , later , for now return fake value
+    "{:.2f}v".format((batlvl.value/10000)+1)+ "  " + str(vref_en.value)
     '''
-    batlevel = label.Label(font=terminalio.FONT, text=str(batlvl.value), color=WHITE, scale=1)
+    #batlevel = label.Label(font=terminalio.FONT, text=str(batlvl.value), color=WHITE, scale=1)
+    batlevel = label.Label(font=terminalio.FONT, text=str("{:.2f}v".format((batlvl.value/10000)+1)), color=WHITE, scale=1)
     batlevel.y = 7
     batlevel.x = 220
     mainScreen.append(batlevel)
@@ -726,7 +720,8 @@ def badgebutton(pin):
             page += 1
             render(bfiles,"userid")
 
-def badge(index):    
+def badge(index):
+    global showqr
     name = bfiles[(page * 3) + index][0]
     print("/badge/"+name+".txt")
     if name == "EXIT":
@@ -741,11 +736,28 @@ def badge(index):
         led.value=0
         #wait a a b or c button
         while button_a.value==False and button_b.value==False and button_c.value==False:
+            if button_up.value==True:
+                while button_up.value==True:
+                    time.sleep(0.01)
+                led.value=1
+                showqr=False
+                print(showqr)
+                draw_badge(name)
+                led.value=0
+            if button_down.value==True:
+                while button_down.value==True:
+                    time.sleep(0.01)
+                led.value=1
+                showqr=True
+                print(showqr)
+                draw_badge(name)
+                led.value=0
             time.sleep(0.01)            
         #wait release
         while button_a.value==True or button_b.value==True or button_c.value==True:
             time.sleep(0.01)                         
         render(bfiles,"userid")
+        showqr=False
         return True
 
 
@@ -812,8 +824,10 @@ def button(pin):
             render(examples)
 
 def draw_badge(file):
+    global showqr
+    print(showqr)
     #Constants cans be customised
-    IMAGE_WIDTH = 104
+    
     COMPANY_HEIGHT = 40
     DETAILS_HEIGHT = 20
     NAME_HEIGHT = HEIGHT - COMPANY_HEIGHT - (DETAILS_HEIGHT * 2) - 2
@@ -823,14 +837,14 @@ def draw_badge(file):
     DETAIL_SPACING = 20
     OVERLAY_BORDER = 40
     OVERLAY_SPACING = 20    
-    badgescn = displayio.Group()
-    try:
-        image, palette = adafruit_imageload.load("/badges/"+file+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
-    except:
-        image, palette = adafruit_imageload.load("/badges/user.bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
-    tile_grid = displayio.TileGrid(image, pixel_shader=palette)
-    tile_grid.x = display.width - IMAGE_WIDTH 
-    tile_grid.y = 0    
+    if showqr==False:
+        try:
+            image, palette = adafruit_imageload.load("/badges/"+file+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+        except:
+            image, palette = adafruit_imageload.load("/badges/user.bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+        tile_grid = displayio.TileGrid(image, pixel_shader=palette)
+        tile_grid.x = display.width - IMAGE_WIDTH 
+        tile_grid.y = 0    
     f = open("/badges/"+file+".txt","r")
     company = f.readline()
     name = f.readline()
@@ -894,11 +908,82 @@ def draw_badge(file):
     ntxt.y = HEIGHT - (DETAILS_HEIGHT // 2) 
     badgescn.append(ntxt)      
     # Draw badge image
-    badgescn.append(tile_grid)
+    if showqr==False:
+        print("Show pic")
+        badgescn.append(tile_grid)
+    else:
+        print("show QR")
+        badgeQR(file)
     display.show(badgescn)
     display.refresh()
     for i in range(0, len(badgescn)):
         badgescn.pop()
+
+def bitmap_QR(matrix):
+    # monochome (2 color) palette
+    BORDER_PIXELS = 2
+
+    # bitmap the size of the screen, monochrome (2 colors)
+    bitmap = displayio.Bitmap(
+        matrix.width + 2 * BORDER_PIXELS, matrix.height + 2 * BORDER_PIXELS, 2
+    )
+    # raster the QR code
+    for y in range(matrix.height):  # each scanline in the height
+        for x in range(matrix.width):
+            if matrix[x, y]:
+                bitmap[x + BORDER_PIXELS, y + BORDER_PIXELS] = 1
+            else:
+                bitmap[x + BORDER_PIXELS, y + BORDER_PIXELS] = 0
+    return bitmap
+
+def badgeQR(file):
+    f = open("/badges/"+file+".txt","r")
+    company = f.readline()
+    name = f.readline()
+    detail1_title = f.readline()
+    detail1_text = f.readline()
+    detail2_title = f.readline()
+    detail2_text = f.readline()
+    telfix = f.readline()
+    telmob = f.readline()
+    email = f.readline()
+    site = f.readline().strip()
+    f.close()
+    texte="BEGIN:VCARD\n"
+    texte+="N:"+name.strip()+";\n"
+    texte+="TEL;TYPE=work:"+telfix.strip()+"\n"
+    texte+="TEL;TYPE=cell:"+telmob.strip()+"\n"
+    texte+="EMAIL;TYPE=work:"+email.strip()+"\n"
+    texte+="ORG:"+company.strip()+"\n"
+    texte+="TITLE:"+detail1_title.strip()+" "+detail1_text.strip()+"\n"
+    texte+="NOTE:"+detail2_title.strip()+" "+detail2_text.strip()+"\n"
+    #texte+="ADR;Type=WORK:"+adr+"\n"
+    texte+="URL:"+site+"\n"
+    texte+="VERSION:3.0\nEND:VCARD\n"
+    print(texte)
+    print(len(texte))
+    #depart=len(badgescn)
+    qr = adafruit_miniqr.QRCode(qr_type=9, error_correct=adafruit_miniqr.L)
+    qr.add_data(texte.encode('ascii'))
+    qr.make()
+    qr_bitmap = bitmap_QR(qr.matrix)
+    badgescn.append(Rect((display.width - IMAGE_WIDTH), 0, IMAGE_WIDTH, IMAGE_HEIGHT, fill=WHITE, outline=WHITE))
+    scale = min(
+    board.DISPLAY.width // qr_bitmap.width, board.DISPLAY.height // qr_bitmap.height
+)
+    
+    pos_x = (display.width - IMAGE_WIDTH)+int((display.width-(display.width - IMAGE_WIDTH)-qr_bitmap.width)/2)
+    pos_y = int((display.height-qr_bitmap.height)/2)
+    badgescn.append(Rect(pos_x, pos_y, IMAGE_WIDTH, IMAGE_HEIGHT, fill=WHITE, outline=WHITE))
+    qr_img = displayio.TileGrid(qr_bitmap, pixel_shader=palette, x=pos_x, y=pos_y)
+    print(qr_bitmap.width)
+    print(qr_bitmap.height)
+    badgescn.append(qr_img)
+    #display.show(badgescn)
+    #display.refresh()
+    #fin=len(badgescn)
+    #for i in range(depart,fin):
+    #    badgescn.pop()
         
 # Draw a upward arrow
 def draw_up(x, y, width, height, thickness, padding):
