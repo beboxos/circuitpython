@@ -211,51 +211,40 @@ def map_value(input, in_min, in_max, out_min, out_max):
 def get_battery_level():
     # Enable the onboard voltage reference
     #vref_en.value
-
     # Calculate the logic supply voltage, as will be lower that the usual 3.3V when running off low batteries
     #vdd = 1.24 * (65535 / vref_adc.read_u16())
     #vbat = (vbat_adc.read_u16() / 65535) * 3 * vdd  # 3 in this is a gain, not rounding of 3.3V
-
+    vbat=int((batlvl.value/100)+140)
     # Disable the onboard voltage reference
     #vref_en.value
-
-    # Convert the voltage to a level to display onscreen
-    #return int(map_value(vbat, MIN_BATTERY_VOLTAGE, MAX_BATTERY_VOLTAGE, 0, 4))
     '''
-    need to be coded to read battery level in circuitpython , later , for now return fake value
-    "{:.2f}v".format((batlvl.value/10000)+1)+ "  " + str(vref_en.value)
+    print(batlvl.value)
+    print(MIN_BATTERY_VOLTAGE)
+    print(MAX_BATTERY_VOLTAGE)
+    print(vbat)
+    print(int(map_value(vbat, MIN_BATTERY_VOLTAGE, MAX_BATTERY_VOLTAGE, 0, 4)))
     '''
-    #batlevel = label.Label(font=terminalio.FONT, text=str(batlvl.value), color=WHITE, scale=1)
     batlevel = label.Label(font=terminalio.FONT, text=str("{:.2f}v".format((batlvl.value/10000)+1)), color=WHITE, scale=1)
     batlevel.y = 7
-    batlevel.x = 220
+    batlevel.x = 235
     mainScreen.append(batlevel)
-    return 3
+    return int(map_value(vbat, MIN_BATTERY_VOLTAGE, MAX_BATTERY_VOLTAGE, 0, 4))
 
 
 def draw_battery(level, x, y):
-    #mainScreen.append(Rect(x + 10, 3, 80, 10, fill=BLACK, outline=WHITE))
-    #display.rect(x, y, 19, 10, WHITE)
     mainScreen.append(Rect(x, y, 19, 10, fill=WHITE, outline=WHITE))
-    #display.rect(x + 19, y + 3, 2, 4, WHITE)
     mainScreen.append(Rect(x + 19, y + 3, 2, 4, fill=WHITE, outline=WHITE))
-    #display.rect(x + 1, y + 1, 17, 8, BLACK)
     mainScreen.append(Rect(x + 1, y + 1, 17, 8, fill=BLACK, outline=BLACK))
     if level < 1:
         mainScreen.append(Line(x + 3, y, x + 3 + 10, y + 10, BLACK))
-        #display.line(x + 3, y, x + 3 + 10, y + 10, BLACK)
         mainScreen.append(Line(x + 3 + 1, y, x + 3 + 11, y + 10, BLACK))
-        #display.line(x + 3 + 1, y, x + 3 + 11, y + 10, BLACK)
         mainScreen.append(Line(x + 2 + 2, y - 1, x + 4 + 12, y + 11, WHITE))
-        #display.line(x + 2 + 2, y - 1, x + 4 + 12, y + 11, WHITE)
         mainScreen.append(Line(x + 2 + 3, y - 1, x + 4 + 13, y + 11, WHITE))
-        #display.line(x + 2 + 3, y - 1, x + 4 + 13, y + 11, WHITE)
         return
     # Battery Bars
     for i in range(4):
         if level / 4 > (1.0 * i) / 4:
             mainScreen.append(Rect(i * 4 + x + 2, y + 2, 3, 6, fill=WHITE, outline=WHITE))
-            #display.fill_rect(i * 4 + x + 2, y + 2, 3, 6, WHITE)
 
 
 def draw_disk_usage(x):
@@ -582,20 +571,22 @@ def ebookbutton(pin):
 
 def ebselect(index):
     global page, font_size, inverted
-    name = ebfiles[(page * 3) + index][0]
-    print("/ebook/"+name+".txt")
-    if name == "EXIT":
-        return False
-    else:
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01) 
-        # ici
-        ebookfile= "/ebook/"+name+".txt"
-        readebook(ebookfile)                      
-        render(ebfiles,"text")
-        return True   
-
+    try:
+        name = ebfiles[(page * 3) + index][0]
+        print("/ebook/"+name+".txt")
+        if name == "EXIT":
+            return False
+        else:
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01) 
+            # ici
+            ebookfile= "/ebook/"+name+".txt"
+            readebook(ebookfile)                      
+            render(ebfiles,"text")
+            return True   
+    except:
+        print("Error in button selection")
 def readebook(efile):
     global next_page, prev_page,last_offset,current_page, ebook
     print("go to read" + efile + " ebook")
@@ -665,37 +656,39 @@ def imgbutton(pin):
             page += 1
             render(picfiles,"bmp")
 
-def img(index):    
-    name = picfiles[(page * 3) + index][0]
-    print("/image/"+name+".bmp")
-    if name == "EXIT":
-        return False
-    else:
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01) 
-        led.value=1
-        # ici
-        mainScreen.append(Rect(0, 0, display.width +1, display.height, fill=WHITE, outline=WHITE))
-        image, palette = adafruit_imageload.load("/images/"+name+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
-        tile_grid = displayio.TileGrid(image, pixel_shader=palette)
-        tile_grid.x = 0
-        tile_grid.y = 0
-        mainScreen.append(tile_grid)
-        display.show(mainScreen)
-        display.refresh()
-        mainScreen.pop() #kill pic
-        mainScreen.pop() #kill whiteBG
-        led.value=0
-        #wait a a b or c button
-        while button_a.value==False and button_b.value==False and button_c.value==False:
-            time.sleep(0.01)            
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01)                         
-        render(picfiles,"bmp")
-        return True
-
+def img(index):
+    try:
+        name = picfiles[(page * 3) + index][0]
+        print("/image/"+name+".bmp")
+        if name == "EXIT":
+            return False
+        else:
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01) 
+            led.value=1
+            # ici
+            mainScreen.append(Rect(0, 0, display.width +1, display.height, fill=WHITE, outline=WHITE))
+            image, palette = adafruit_imageload.load("/images/"+name+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+            tile_grid = displayio.TileGrid(image, pixel_shader=palette)
+            tile_grid.x = 0
+            tile_grid.y = 0
+            mainScreen.append(tile_grid)
+            display.show(mainScreen)
+            display.refresh()
+            mainScreen.pop() #kill pic
+            mainScreen.pop() #kill whiteBG
+            led.value=0
+            #wait a a b or c button
+            while button_a.value==False and button_b.value==False and button_c.value==False:
+                time.sleep(0.01)            
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01)                         
+            render(picfiles,"bmp")
+            return True
+    except:
+        print("wrong selection")
 
 def badgebutton(pin):
     global page, font_size, inverted
@@ -722,56 +715,62 @@ def badgebutton(pin):
 
 def badge(index):
     global showqr
-    name = bfiles[(page * 3) + index][0]
-    print("/badge/"+name+".txt")
-    if name == "EXIT":
-        #hidexit=True
-        return False
-    else:
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01) 
-        led.value=1
-        draw_badge(name)
-        led.value=0
-        #wait a a b or c button
-        while button_a.value==False and button_b.value==False and button_c.value==False:
-            if button_up.value==True:
-                while button_up.value==True:
-                    time.sleep(0.01)
-                led.value=1
-                showqr=False
-                print(showqr)
-                draw_badge(name)
-                led.value=0
-            if button_down.value==True:
-                while button_down.value==True:
-                    time.sleep(0.01)
-                led.value=1
-                showqr=True
-                print(showqr)
-                draw_badge(name)
-                led.value=0
-            time.sleep(0.01)            
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01)                         
-        render(bfiles,"userid")
-        showqr=False
-        return True
+    try:
+        name = bfiles[(page * 3) + index][0]
+        print("/badge/"+name+".txt")
+        if name == "EXIT":
+            #hidexit=True
+            return False
+        else:
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01) 
+            led.value=1
+            draw_badge(name)
+            led.value=0
+            #wait a a b or c button
+            while button_a.value==False and button_b.value==False and button_c.value==False:
+                if button_up.value==True:
+                    while button_up.value==True:
+                        time.sleep(0.01)
+                    led.value=1
+                    showqr=False
+                    print(showqr)
+                    draw_badge(name)
+                    led.value=0
+                if button_down.value==True:
+                    while button_down.value==True:
+                        time.sleep(0.01)
+                    led.value=1
+                    showqr=True
+                    print(showqr)
+                    draw_badge(name)
+                    led.value=0
+                time.sleep(0.01)            
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01)                         
+            render(bfiles,"userid")
+            showqr=False
+    except:
+        print("Error in badge selection")
+    return True
 
 
-def hid(index):    
-    name = hidfiles[(page * 3) + index][0]
-    print("/hid/"+name+".txt")
-    if name == "EXIT":
-        hidexit=True
-        return False
-    else:
-        led.value=1
-        callduck("/hid/"+name+".txt")
-        led.value=0
-        return True
+def hid(index):
+    try:
+        name = hidfiles[(page * 3) + index][0]
+        print("/hid/"+name+".txt")
+        if name == "EXIT":
+            hidexit=True
+            return False
+        else:
+            led.value=1
+            callduck("/hid/"+name+".txt")
+            led.value=0
+            return True
+    except:
+        print("wrong selection")
 
 def hidbutton(pin):
     global page, font_size, inverted
