@@ -30,6 +30,8 @@ If you have no information to put, leave the line blank
 
 Other addition (Beta) battery voltage in the bar. In the next update the battery logo will be updated, I still have to find the high and low limits of the battery, but as the epaper does not consume almost anything it may take me a while.
 
+addon 11h : bug fixes , and battery level beta version show correct icon value and voltage in top bar
+
 ## Update March 21, 2022:
 a big thank you to Chris Parrott for his help, we can now fix the pin 3V3 (GPIO10) to high. 
 fixed a bug where the HID was crashing at boot if not connected to the USB (logical) now at boot we test if connected or not to the usb to disable the HID features (to reactivate reboot).
@@ -40,7 +42,7 @@ Warning: on battery press a button for (about 20 sec to wake up the badge) to pu
 all the code has been rewritten to take into account the use of Adafruit DisplayIO libraries (with management of texts, 4 bits black & white BMP images, and also shapes). For the moment I haven't activated the battery display (I have a problem on my badger, it doesn't seem to work on battery and I haven't found yet why (maybe my device has a defect).
 
 ## todo: 
-management of the battery level. (work in progress 21.03.2022)
+management of the battery level. (beta version 22.03.2022)
 
 ~~the "info" part~~ : done 17.03.2022<cr/>
 
