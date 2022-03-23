@@ -6,13 +6,7 @@ twitter : @beboxos
 edit from 03.2022
 change log : add info
 '''
-#HID init
-layout = "fr" # fr or us
-import gc, os , math, microcontroller, digitalio, board
-#hack set pin10 3V3 to high
-pin3v3 = digitalio.DigitalInOut(microcontroller.pin.GPIO10)
-pin3v3.direction = digitalio.Direction.OUTPUT
-pin3v3.value = True
+import gc, os , math, microcontroller, digitalio, board, storage
 import analogio, time, usb_hid
 from adafruit_hid.keyboard import Keyboard
 import adafruit_ducky, busio, displayio , terminalio , vectorio
@@ -26,28 +20,59 @@ from adafruit_display_shapes.triangle import Triangle
 from adafruit_display_shapes.line import Line
 from adafruit_display_shapes.polygon import Polygon
 import adafruit_miniqr
+#usb=False
+flag=False
+#HID init
+
+try :
+    layout = microcontroller.nvm[0:2].decode() # 2 chars form nvm memory index 0
+    #layout = layout.decode().strip()
+    #print("Find "+layout+" in mémory")
+except:
+    layout = "fr" # fr or us fixed value if no data in memory
+#print("Keyboard layout :"+layout)
+
+#hack set pin10 3V3 to high
+pin3v3 = digitalio.DigitalInOut(microcontroller.pin.GPIO10)
+pin3v3.direction = digitalio.Direction.OUTPUT
+pin3v3.value = True
+
 display = board.DISPLAY
 display.rotation = 270
 palette = displayio.Palette(1)
 palette[0] = 0xFFFFFF
 WHITE = 0xFFFFFF
 BLACK = 0x000000
-usb=False
+#usb=False
 badgescn = displayio.Group()
 showqr=False
 IMAGE_WIDTH = 104
 IMAGE_HEIGHT = 128
-try:
-    keyboard = Keyboard(usb_hid.devices)
-    if layout=="fr": 
-        from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
-        keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
+def fixlayout(lang):
+    global usb
+    try:
+        keyboard = Keyboard(usb_hid.devices)
+        usb=True
+    except:
+        usb=False
+    layout=lang
+    if usb==True:
+        keyboard = Keyboard(usb_hid.devices)
+        if lang=="fr": 
+            from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
+            keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
+            
+        else:
+            from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
+            keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
+        #usb=True
+        #print(usb)
     else:
-        from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
-        keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
-    usb=True
-except:
-    print("not connected on usb")
+        print("not connected on usb")
+        #usb=False
+    return usb
+    #print(tomem[0:2] + " / " + lang + "/" + layout)
+        
 def callduck(filename):
     if usb==True:
         duck = adafruit_ducky.Ducky(filename, keyboard, keyboard_layout)    
@@ -158,6 +183,8 @@ for n in files:
             ebfiles.append((n.replace(".txt",""),count))
             count=count+1        
 ebfiles.append(("EXIT",count))
+# prefs menu
+prefsdb= [("fr",0),("us",1),("EXIT",2)]
 # main menu with extra functions scan in app folder
 #fixed functions
 examples = [
@@ -211,53 +238,83 @@ def map_value(input, in_min, in_max, out_min, out_max):
 def get_battery_level():
     # Enable the onboard voltage reference
     #vref_en.value
-
     # Calculate the logic supply voltage, as will be lower that the usual 3.3V when running off low batteries
     #vdd = 1.24 * (65535 / vref_adc.read_u16())
     #vbat = (vbat_adc.read_u16() / 65535) * 3 * vdd  # 3 in this is a gain, not rounding of 3.3V
-
+    vbat=int((batlvl.value/100)+140)
     # Disable the onboard voltage reference
     #vref_en.value
-
-    # Convert the voltage to a level to display onscreen
-    #return int(map_value(vbat, MIN_BATTERY_VOLTAGE, MAX_BATTERY_VOLTAGE, 0, 4))
     '''
-    need to be coded to read battery level in circuitpython , later , for now return fake value
-    "{:.2f}v".format((batlvl.value/10000)+1)+ "  " + str(vref_en.value)
+    print(batlvl.value)
+    print(MIN_BATTERY_VOLTAGE)
+    print(MAX_BATTERY_VOLTAGE)
+    print(vbat)
+    print(int(map_value(vbat, MIN_BATTERY_VOLTAGE, MAX_BATTERY_VOLTAGE, 0, 4)))
     '''
-    #batlevel = label.Label(font=terminalio.FONT, text=str(batlvl.value), color=WHITE, scale=1)
     batlevel = label.Label(font=terminalio.FONT, text=str("{:.2f}v".format((batlvl.value/10000)+1)), color=WHITE, scale=1)
     batlevel.y = 7
-    batlevel.x = 220
+    batlevel.x = 235
     mainScreen.append(batlevel)
-    return 3
+    return int(map_value(vbat, MIN_BATTERY_VOLTAGE, MAX_BATTERY_VOLTAGE, 0, 4))
 
 
 def draw_battery(level, x, y):
-    #mainScreen.append(Rect(x + 10, 3, 80, 10, fill=BLACK, outline=WHITE))
-    #display.rect(x, y, 19, 10, WHITE)
     mainScreen.append(Rect(x, y, 19, 10, fill=WHITE, outline=WHITE))
-    #display.rect(x + 19, y + 3, 2, 4, WHITE)
     mainScreen.append(Rect(x + 19, y + 3, 2, 4, fill=WHITE, outline=WHITE))
-    #display.rect(x + 1, y + 1, 17, 8, BLACK)
     mainScreen.append(Rect(x + 1, y + 1, 17, 8, fill=BLACK, outline=BLACK))
     if level < 1:
         mainScreen.append(Line(x + 3, y, x + 3 + 10, y + 10, BLACK))
-        #display.line(x + 3, y, x + 3 + 10, y + 10, BLACK)
         mainScreen.append(Line(x + 3 + 1, y, x + 3 + 11, y + 10, BLACK))
-        #display.line(x + 3 + 1, y, x + 3 + 11, y + 10, BLACK)
         mainScreen.append(Line(x + 2 + 2, y - 1, x + 4 + 12, y + 11, WHITE))
-        #display.line(x + 2 + 2, y - 1, x + 4 + 12, y + 11, WHITE)
         mainScreen.append(Line(x + 2 + 3, y - 1, x + 4 + 13, y + 11, WHITE))
-        #display.line(x + 2 + 3, y - 1, x + 4 + 13, y + 11, WHITE)
         return
     # Battery Bars
     for i in range(4):
         if level / 4 > (1.0 * i) / 4:
             mainScreen.append(Rect(i * 4 + x + 2, y + 2, 3, 6, fill=WHITE, outline=WHITE))
-            #display.fill_rect(i * 4 + x + 2, y + 2, 3, 6, WHITE)
+    
+def showlayout(lang):
+    #fixlayout(lang)
+    print("usb = ",end="")
+    print(usb)
+    ltext = label.Label(font=terminalio.FONT, text=lang.upper(), color=WHITE, scale=1)
+    ltext.y = 7
+    ltext.x = 202
+    mainScreen.append(ltext)
+    '''
+    image, palette = adafruit_imageload.load("/assets/icons/"+lang+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+    tile_grid = displayio.TileGrid(image, pixel_shader=palette)
+    tile_grid.x = 200
+    tile_grid.y = 0    
+    mainScreen.append(tile_grid)
+    '''
 
 
+
+def usbconnected():
+    global usb
+    print("usb connected :",end='')
+    print(usb)
+    
+    if usb==True:
+        image, palette = adafruit_imageload.load("/assets/icons/usb.bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)        
+    else:
+        image, palette = adafruit_imageload.load("/assets/icons/blank.bmp", bitmap=displayio.Bitmap, palette=displayio.Palette) 
+    tile_grid = displayio.TileGrid(image, pixel_shader=palette)
+    tile_grid.x = 216
+    tile_grid.y = 0    
+    mainScreen.append(tile_grid)
+    '''
+    if usb==True:
+        lang="U"
+    else:
+        lang=" "
+    ltext = label.Label(font=terminalio.FONT, text=lang.upper(), color=WHITE, scale=1)
+    ltext.y = 7
+    ltext.x = 218
+    mainScreen.append(ltext)
+    '''
+        
 def draw_disk_usage(x):
     # f_bfree and f_bavail should be the same?
     # f_files, f_ffree, f_favail and f_flag are unsupported.
@@ -286,15 +343,18 @@ title = label.Label(font=terminalio.FONT, text="BadgerOS CPython", color=WHITE, 
 title.y = 7
 title.x = 3
 
+
 mainScreen.append(whiteBG) #ID0
 mainScreen.append(topbar)  #ID1
 mainScreen.append(title)   #ID2
 draw_disk_usage(90)
+fixlayout(layout) # check if usb is connected
 ebgroup = displayio.Group()
 # *******************************************************************************
 
 
 def render(tablist, defaulticon="file"):
+    global usb
     groupbefore=len(mainScreen)
     MAX_PAGE = math.ceil(len(tablist) / 3)
     led.value = 1
@@ -328,7 +388,12 @@ def render(tablist, defaulticon="file"):
             spot = Rect(x, y, 8, 8, fill=BLACK, outline=BLACK)
             mainScreen.append(spot)    
     draw_battery(get_battery_level(), WIDTH - 22 - 3, 3)
+    showlayout(layout)
+    print("On render usb =",end='')
+    print(usb)
+    usbconnected()
     display.show(mainScreen)
+
     while display.busy==True:
         time.sleep(0.01)     
     display.refresh()
@@ -351,13 +416,58 @@ def launch(file):
     import microcontroller
     microcontroller.reset()
 
+def prefs():
+    global page, usb,prefsdb
+    print("prefs selection on mainscreen")
+    #prefs in lazy way
+    before=len(mainScreen)
+    page=0
+    ex=False
+    render(prefsdb,"keyb")
+    while ex==False:
+        if button_a.value==True:
+            led.value=1
+            while button_a.value==True:
+                pass               
+            fixlayout("fr")
+            lang="fr"
+            tomem=bytearray(lang.encode())
+            microcontroller.nvm[0:2]=tomem[0:2]            
+            ex=True
+            led.value=0
+            microcontroller.reset()
+        if button_b.value==True:
+            led.value=1
+            while button_b.value==True:
+                pass               
+            fixlayout("us")
+            lang="us"
+            tomem=bytearray(lang.encode())
+            microcontroller.nvm[0:2]=tomem[0:2]            
+            ex=True
+            led.value=0
+            microcontroller.reset()
+        if button_c.value==True:
+            led.value=1
+            while button_c.value==True:
+                pass               
+            ex=True
+            led.value=0            
+    # work zone
+    after=len(mainScreen)
+
 # important root routine ------------------------------------------------------------
 def launch_example(index):
-    global page, font_size, inverted
+    global page, font_size, inverted, flag
     #print("index : "+str(index))
     #print(examples[(page * 3) + index][0])
     if (page * 3) + index == 0:
         hidexit=False
+        led.value=1
+        if flag==False:
+            fixlayout(layout)
+            flag=True
+        led.value=0
         #special action rubber ducky
         while button_a.value==True:
             time.sleep(0.01)
@@ -386,6 +496,7 @@ def launch_example(index):
                 hidbutton(5)            
             time.sleep(0.01)
         page=0
+        flag=False
         render(examples,"file")
         return
     if (page * 3) + index == 1:
@@ -526,7 +637,7 @@ def launch_example(index):
         labelt.y =  y
         mainScreen.append(labelt)
         y += LINE_HEIGHT
-        labelt = label.Label(font3, text="Launcher made by BeBox inspired by original.", color=BLACK, scale=1)
+        labelt = label.Label(font3, text="Launcher made by BeBox inspired by original. v1.0", color=BLACK, scale=1)
         labelt.x =  0
         labelt.y =  y
         mainScreen.append(labelt)
@@ -547,6 +658,11 @@ def launch_example(index):
     if (page * 3) + index == 5:
         # prefs
         print("prefs ...")
+        oldpage=page
+        prefs()
+        page=oldpage
+        render(examples,"file")  
+        
         return
     else:    
         try:
@@ -582,20 +698,22 @@ def ebookbutton(pin):
 
 def ebselect(index):
     global page, font_size, inverted
-    name = ebfiles[(page * 3) + index][0]
-    print("/ebook/"+name+".txt")
-    if name == "EXIT":
-        return False
-    else:
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01) 
-        # ici
-        ebookfile= "/ebook/"+name+".txt"
-        readebook(ebookfile)                      
-        render(ebfiles,"text")
-        return True   
-
+    try:
+        name = ebfiles[(page * 3) + index][0]
+        print("/ebook/"+name+".txt")
+        if name == "EXIT":
+            return False
+        else:
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01) 
+            # ici
+            ebookfile= "/ebook/"+name+".txt"
+            readebook(ebookfile)                      
+            render(ebfiles,"text")
+            return True   
+    except:
+        print("Error in button selection")
 def readebook(efile):
     global next_page, prev_page,last_offset,current_page, ebook
     print("go to read" + efile + " ebook")
@@ -665,37 +783,39 @@ def imgbutton(pin):
             page += 1
             render(picfiles,"bmp")
 
-def img(index):    
-    name = picfiles[(page * 3) + index][0]
-    print("/image/"+name+".bmp")
-    if name == "EXIT":
-        return False
-    else:
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01) 
-        led.value=1
-        # ici
-        mainScreen.append(Rect(0, 0, display.width +1, display.height, fill=WHITE, outline=WHITE))
-        image, palette = adafruit_imageload.load("/images/"+name+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
-        tile_grid = displayio.TileGrid(image, pixel_shader=palette)
-        tile_grid.x = 0
-        tile_grid.y = 0
-        mainScreen.append(tile_grid)
-        display.show(mainScreen)
-        display.refresh()
-        mainScreen.pop() #kill pic
-        mainScreen.pop() #kill whiteBG
-        led.value=0
-        #wait a a b or c button
-        while button_a.value==False and button_b.value==False and button_c.value==False:
-            time.sleep(0.01)            
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01)                         
-        render(picfiles,"bmp")
-        return True
-
+def img(index):
+    try:
+        name = picfiles[(page * 3) + index][0]
+        print("/image/"+name+".bmp")
+        if name == "EXIT":
+            return False
+        else:
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01) 
+            led.value=1
+            # ici
+            mainScreen.append(Rect(0, 0, display.width +1, display.height, fill=WHITE, outline=WHITE))
+            image, palette = adafruit_imageload.load("/images/"+name+".bmp", bitmap=displayio.Bitmap, palette=displayio.Palette)
+            tile_grid = displayio.TileGrid(image, pixel_shader=palette)
+            tile_grid.x = 0
+            tile_grid.y = 0
+            mainScreen.append(tile_grid)
+            display.show(mainScreen)
+            display.refresh()
+            mainScreen.pop() #kill pic
+            mainScreen.pop() #kill whiteBG
+            led.value=0
+            #wait a a b or c button
+            while button_a.value==False and button_b.value==False and button_c.value==False:
+                time.sleep(0.01)            
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01)                         
+            render(picfiles,"bmp")
+            return True
+    except:
+        print("wrong selection")
 
 def badgebutton(pin):
     global page, font_size, inverted
@@ -722,59 +842,65 @@ def badgebutton(pin):
 
 def badge(index):
     global showqr
-    name = bfiles[(page * 3) + index][0]
-    print("/badge/"+name+".txt")
-    if name == "EXIT":
-        #hidexit=True
-        return False
-    else:
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01) 
-        led.value=1
-        draw_badge(name)
-        led.value=0
-        #wait a a b or c button
-        while button_a.value==False and button_b.value==False and button_c.value==False:
-            if button_up.value==True:
-                while button_up.value==True:
-                    time.sleep(0.01)
-                led.value=1
-                showqr=False
-                print(showqr)
-                draw_badge(name)
-                led.value=0
-            if button_down.value==True:
-                while button_down.value==True:
-                    time.sleep(0.01)
-                led.value=1
-                showqr=True
-                print(showqr)
-                draw_badge(name)
-                led.value=0
-            time.sleep(0.01)            
-        #wait release
-        while button_a.value==True or button_b.value==True or button_c.value==True:
-            time.sleep(0.01)                         
-        render(bfiles,"userid")
-        showqr=False
-        return True
+    try:
+        name = bfiles[(page * 3) + index][0]
+        print("/badge/"+name+".txt")
+        if name == "EXIT":
+            #hidexit=True
+            return False
+        else:
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01) 
+            led.value=1
+            draw_badge(name)
+            led.value=0
+            #wait a a b or c button
+            while button_a.value==False and button_b.value==False and button_c.value==False:
+                if button_up.value==True:
+                    while button_up.value==True:
+                        time.sleep(0.01)
+                    led.value=1
+                    showqr=False
+                    print(showqr)
+                    draw_badge(name)
+                    led.value=0
+                if button_down.value==True:
+                    while button_down.value==True:
+                        time.sleep(0.01)
+                    led.value=1
+                    showqr=True
+                    print(showqr)
+                    draw_badge(name)
+                    led.value=0
+                time.sleep(0.01)            
+            #wait release
+            while button_a.value==True or button_b.value==True or button_c.value==True:
+                time.sleep(0.01)                         
+            render(bfiles,"userid")
+            showqr=False
+    except:
+        print("Error in badge selection")
+    return True
 
 
-def hid(index):    
-    name = hidfiles[(page * 3) + index][0]
-    print("/hid/"+name+".txt")
-    if name == "EXIT":
-        hidexit=True
-        return False
-    else:
-        led.value=1
-        callduck("/hid/"+name+".txt")
-        led.value=0
-        return True
+def hid(index):
+    try:
+        name = hidfiles[(page * 3) + index][0]
+        print("/hid/"+name+".txt")
+        if name == "EXIT":
+            hidexit=True
+            return False
+        else:
+            led.value=1
+            callduck("/hid/"+name+".txt")
+            led.value=0
+            return True
+    except:
+        print("wrong selection")
 
 def hidbutton(pin):
-    global page, font_size, inverted
+    global page, font_size, inverted, usb, layout, flag
     #if button_user.value():  # User button is NOT held down
     if pin == 1:
         if hid(0)==False:
@@ -1124,6 +1250,7 @@ def render_page():
 # try if button a b c ... pressed at boot
 # launch script with name of button if present a.txt b.txt etc ..
 # special pentest
+fixlayout(layout)
 if usb==True:
     pressed=False
     if button_a.value==True:
