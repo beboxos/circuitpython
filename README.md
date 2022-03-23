@@ -2,9 +2,18 @@
 
 On my repository you will find...
 
+<h1>CircuitPython BadgerOS for Pimorini Barger2040</h1>
+
+![anim](https://github.com/beboxos/circuitpython/blob/main/badger2040/pics/badgeranim.gif)<cr />
+
+[click here to go to this section](https://github.com/beboxos/circuitpython/tree/main/badger2040)
+
+
 <h1>CircuitPython launcher for Adafruit PyPortal titano</h1>
 
 ![launcher](/images/launcher.png)
+
+
 
 A touch application launcher for CircuitPython 
 [Clic here to go to this section](https://github.com/beboxos/circuitpython/tree/main/pyportal%20titano/Circuitpyton%20launcher)
