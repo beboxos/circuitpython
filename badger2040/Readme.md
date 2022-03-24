@@ -59,11 +59,7 @@ The code has been rewritten to take into account the use of Adafruit DisplayIO l
 
 ## TODO: 
 
-Management of the battery level. (beta version 22.03.2022)
-
-~~the "info" part~~ : done 17.03.2022<cr/>
-
-The "prefs" part to set (in the non volatile memory) the HID parameters for the moment hard-coded in the code with `layout = fr` or `layout = us`.<cr/>
+use deep sleep functions 
 
 Code the list function as in the original Micropython version.<cr/>
 
