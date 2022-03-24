@@ -44,7 +44,7 @@ If you have no information to input, leave the line blank.
 
 Other addition (Beta): battery voltage in the bar. In the next update, the battery logo will be updated. I still have to find the high and low limits of the battery, but as the epaper does not consume almost anything, it may take me a while.
 
-Added at 11 o'clock: bug fixes, and battery level beta version shows correct icon value and voltage in top bar.
+more : bug fixes, and battery level beta version shows correct icon value and voltage in top bar.
 
 ## Update March 21, 2022:
 
