@@ -14,6 +14,17 @@ video démo on youtube : [clic on this link ](https://www.youtube.com/watch?v=mA
 
 ![anim](pics/badgeranim.gif)
 
+## Update March 24, 2022:
+
+Version 1.0 .
+From now on, you don't need to edit the keyboard language in the code, everything is done from the "prefs" menu where you can choose the French AZERTY (PC only) or US (QWERTY) layout.
+
+Added icons in the top bar that indicate which layout is active (US or FR) as well as whether the device is connected to the USB or not (to avoid slowdowns when not connected to the usb, the test is done at boot time and when you go to the Keyb menu)
+
+the batteries level and voltages are working.
+
+Note (following an issue): to start the badge in battery mode (issue related to circuitpython for the moment may be repaired in future releases) you must press for about 10 to 20 seconds on one of the five buttons (the LED flashes 3 times, then once after). On battery if you press reset the badge does not restart and remains in standby, so it must be restarted with the button as I just described.
+
 ## Update March 22, 2022:
 
 Added QRcode functions on badges. When displaying a badge, press the bottom arrow to replace the photo with a QRcode (.vcf format) compatible with all mobiles. Look at the example text files to see the format, but the new format is (one field per line):
