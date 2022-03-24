@@ -10,6 +10,8 @@ Mount the device as a USB drive, then you can manage it by just dragging and dro
 
 video démo on youtube : [clic on this link ](https://www.youtube.com/watch?v=mA5UjWe_tYo "clic on this link ")
 
+[usefull electronic sheme](https://cdn.shopify.com/s/files/1/0174/1800/files/badger_2040_schematic.pdf?v=1645702148)
+
 ![anim](pics/badgeranim.gif)
 
 ## Update March 22, 2022:
