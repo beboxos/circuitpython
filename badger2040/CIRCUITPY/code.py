@@ -64,7 +64,7 @@ showqr=False
 IMAGE_WIDTH = 104
 IMAGE_HEIGHT = 128
 def fixlayout(lang):
-    global usb, keyboard
+    global usb, keyboard, keyboard_layout
     print("fixlayout usb =", end='')
     print(usb)
     try:
@@ -902,6 +902,7 @@ def badge(index):
 
 
 def hid(index):
+    global usb, keyboard, keyboard_layout
     try:
         name = hidfiles[(page * 3) + index][0]
         print("/hid/"+name+".txt")
@@ -923,6 +924,7 @@ def hid(index):
 
 def hidbutton(pin):
     global page, font_size, inverted, usb, layout, flag
+    global usb, keyboard, keyboard_layout
     #if button_user.value():  # User button is NOT held down
     if pin == 1:
         if hid(0)==False:
