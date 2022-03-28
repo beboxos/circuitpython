@@ -1087,6 +1087,7 @@ def bitmap_QR(matrix):
     return bitmap
 
 def badgeQR(file):
+    global badgescn
     f = open("/badges/"+file+".txt","r")
     company = f.readline()
     name = f.readline()
@@ -1117,14 +1118,16 @@ def badgeQR(file):
     qr.add_data(texte.encode('ascii'))
     qr.make()
     qr_bitmap = bitmap_QR(qr.matrix)
-    badgescn.append(Rect((display.width - IMAGE_WIDTH), 0, IMAGE_WIDTH, IMAGE_HEIGHT, fill=WHITE, outline=WHITE))
+    #badgescn.append(Rect((display.width - IMAGE_WIDTH), 0, IMAGE_WIDTH, IMAGE_HEIGHT, fill=WHITE, outline=WHITE))
     scale = min(
     board.DISPLAY.width // qr_bitmap.width, board.DISPLAY.height // qr_bitmap.height
 )
     
     pos_x = (display.width - IMAGE_WIDTH)+int((display.width-(display.width - IMAGE_WIDTH)-qr_bitmap.width)/2)
+    print("pos_x :"+str(pos_x))
     pos_y = int((display.height-qr_bitmap.height)/2)
-    badgescn.append(Rect(pos_x, pos_y, IMAGE_WIDTH, IMAGE_HEIGHT, fill=WHITE, outline=WHITE))
+    print("pos_y :"+str(pos_y))
+    #badgescn.append(Rect(pos_x, pos_y, IMAGE_WIDTH, IMAGE_HEIGHT, fill=WHITE, outline=WHITE))
     qr_img = displayio.TileGrid(qr_bitmap, pixel_shader=palette, x=pos_x, y=pos_y)
     print(qr_bitmap.width)
     print(qr_bitmap.height)
