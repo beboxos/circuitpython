@@ -20,7 +20,11 @@ from adafruit_display_shapes.triangle import Triangle
 from adafruit_display_shapes.line import Line
 from adafruit_display_shapes.polygon import Polygon
 import adafruit_miniqr
-#usb=False
+try:
+    keyboard = Keyboard(usb_hid.devices)
+    usb=True
+except:
+    usb=False
 flag=False
 #HID init
 
@@ -31,7 +35,18 @@ try :
 except:
     layout = "fr" # fr or us fixed value if no data in memory
 #print("Keyboard layout :"+layout)
-
+try:    
+    if usb==True:
+        keyboard = Keyboard(usb_hid.devices)
+        if layout=="fr": 
+            from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
+            keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
+            
+        else:
+            from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
+            keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
+except:
+    print("error")
 #hack set pin10 3V3 to high
 pin3v3 = digitalio.DigitalInOut(microcontroller.pin.GPIO10)
 pin3v3.direction = digitalio.Direction.OUTPUT
@@ -49,7 +64,9 @@ showqr=False
 IMAGE_WIDTH = 104
 IMAGE_HEIGHT = 128
 def fixlayout(lang):
-    global usb
+    global usb, keyboard
+    print("fixlayout usb =", end='')
+    print(usb)
     try:
         keyboard = Keyboard(usb_hid.devices)
         usb=True
@@ -898,6 +915,11 @@ def hid(index):
             return True
     except:
         print("wrong selection")
+        for n in range(0,20):
+            led.value=1
+            time.sleep(0.1)
+            led.value=0
+            time.sleep(0.1)
 
 def hidbutton(pin):
     global page, font_size, inverted, usb, layout, flag
