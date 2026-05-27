@@ -10,15 +10,17 @@ i ported it to Adafruit Pyportal Titano CircuitPython
 i added i2c m5stack keyboard CardKB but can work with any keyboard
 
 Change log:
-v0.03 - arrow keys history + inline editing
-v0.04 - Bug fixes + new commands: new, cat, mkdir, cp, mv, mem, ver, del, renum
+v0.03 - arrow keys: up/down history, left/right inline editing
+v0.04 - Bug fixes + new commands: new, cat, mkdir, rmdir, cp, mv, del, renum, mem, df, ver
       - Fixed: cd command (was using getcwd instead of chdir)
       - Fixed: dir without argument no longer crashes
-      - Fixed: backspace/insert inline editing rewritten cleanly
-      - Added: ANSI helper functions (less duplication)
-      - Added: file sizes in dir listing
-      - Added: delete line by entering "N" with no code (BASIC style)
-      - Better error messages on save/load/rm
+      - Fixed: backspace / inline insert rewritten cleanly
+      - Fixed: numeric literal 1_000_000 -> 1000000 (CP <7.2 compat)
+      - Fixed: temperature/voltage can return None on some boards
+      - Improved: dir shows file sizes and separates dirs from files
+      - Improved: ver uses os.uname() for accurate board/CP info
+      - Improved: ANSI helpers extracted (no more duplicated escape strings)
+      - Improved: all commands have proper error messages
 
 more on twitter: https://twitter.com/beboxos
 """
@@ -30,7 +32,7 @@ import sys
 import microcontroller
 import busio
 
-# I2C CardKB init
+# --- I2C CardKB init ---
 i2c = busio.I2C(board.SCL, board.SDA)
 while not i2c.try_lock():
     pass
@@ -40,17 +42,21 @@ if cardkb != 95:
     print("!!! CardKB not found. I2C device", cardkb, "found instead.")
     sys.exit(1)
 
+# --- Constants ---
 NUL = '\x00'
 LF  = "\n"
 BS  = '\x08'
 
+# --- Input history / cursor state ---
 buffer  = []
 bufidx  = 0
 curseur = 0
 b       = bytearray(1)
 
 
-# --- ANSI helpers ---
+# ============================================================
+# ANSI terminal helpers
+# ============================================================
 
 def ansi(seq):
     return '\x1b[' + seq
@@ -66,11 +72,10 @@ def cursor_right(n=1):
     if n > 0:
         print(ansi(str(n) + "C"), end="")
 
-def clear_line():
-    print(ansi("2K"), end="")
 
-
-# --- Keyboard ---
+# ============================================================
+# Keyboard input
+# ============================================================
 
 def ReadKey():
     i2c.readfrom_into(cardkb, b)
@@ -84,7 +89,7 @@ def ReadKey():
 
 
 def _replace_input(old, new):
-    """Erase current input on screen and print new string."""
+    """Erase current typed input on screen and replace with new."""
     n = max(len(old), len(new))
     cursor_left(len(old))
     print(' ' * n, end="")
@@ -95,7 +100,7 @@ def _replace_input(old, new):
 def InputFromKB(prompt):
     global bufidx, buffer, curseur
     buffer.append('')
-    bufidx  = len(buffer) - 1
+    bufidx    = len(buffer) - 1
     key       = ''
     datainput = ''
     print(prompt, end='')
@@ -112,14 +117,14 @@ def InputFromKB(prompt):
         if key == LF:
             break
 
-        elif key == b'\xb5':  # up — history back
+        elif key == b'\xb5':  # up arrow — history back
             if bufidx > 0:
                 bufidx -= 1
             _replace_input(datainput, buffer[bufidx])
             datainput = buffer[bufidx]
             curseur   = len(datainput)
 
-        elif key == b'\xb6':  # down — history forward
+        elif key == b'\xb6':  # down arrow — history forward
             if bufidx < len(buffer) - 1:
                 bufidx += 1
             _replace_input(datainput, buffer[bufidx])
@@ -139,9 +144,11 @@ def InputFromKB(prompt):
         elif key == BS:  # backspace
             if curseur > 0:
                 if curseur == len(datainput):
+                    # delete at end of line
                     print(BS + ' ' + BS, end="")
                     datainput = datainput[:-1]
                 else:
+                    # delete in the middle: redraw suffix
                     first     = datainput[:curseur - 1]
                     end       = datainput[curseur:]
                     cursor_left()
@@ -155,6 +162,7 @@ def InputFromKB(prompt):
                 print(key, end='')
                 datainput += key
             else:
+                # insert in the middle: redraw suffix
                 first = datainput[:curseur]
                 end   = datainput[curseur:]
                 print(key + end, end="")
@@ -168,20 +176,29 @@ def InputFromKB(prompt):
     return datainput
 
 
-# --- Filesystem helpers ---
+# ============================================================
+# Filesystem helpers
+# ============================================================
+
+def _is_dir(path):
+    """Return True if path is a directory (works on all CP versions)."""
+    try:
+        os.listdir(path)
+        return True
+    except Exception:
+        return False
+
 
 def _file_size(path):
-    """Return file size in bytes, or -1 if directory."""
+    """Return file size in bytes. Returns 0 on error."""
     try:
-        st = os.stat(path)
-        if st[0] & 0x4000:
-            return -1
-        return st[6]
+        return os.stat(path)[6]
     except Exception:
         return 0
 
 
 def _copy_file(src, dst):
+    """Copy src to dst in 512-byte chunks (memory-friendly)."""
     with open(src, 'rb') as fin:
         with open(dst, 'wb') as fout:
             while True:
@@ -191,7 +208,19 @@ def _copy_file(src, dst):
                 fout.write(chunk)
 
 
-# --- Banner ---
+def _norm_path(raw, base="/"):
+    """Strip quotes/spaces; prefix with / if needed."""
+    p = raw.strip(' "\'')
+    if not p:
+        return base
+    if not p.startswith("/"):
+        p = "/" + p
+    return p
+
+
+# ============================================================
+# Banner
+# ============================================================
 
 clear_screen()
 print("""
@@ -209,27 +238,31 @@ program  = []
 top      = {}
 no_ready = False
 
-# --- Main REPL loop ---
+
+# ============================================================
+# Main REPL loop
+# ============================================================
 
 while True:
     prompt   = ">>>" if no_ready else "READY.\n>>>"
     line     = InputFromKB(prompt)
     no_ready = False
 
+    # Split into command + remainder
     remainder = ''
     if " " in line:
         command, remainder = line.split(" ", 1)
     else:
         command = line
 
-    # Detect bare line number
+    # Detect a bare line number (BASIC style entry)
     lineno = None
     try:
         lineno = int(command, 10)
     except (ValueError, TypeError):
         pass
 
-    # ---- Line number entry (BASIC style) ----
+    # ---- BASIC line number entry ----
     if lineno is not None:
         if lineno < 1:
             print("Line must be >= 1")
@@ -243,7 +276,7 @@ while True:
                 program[lineno - 1] = ""
                 print("Line", lineno, "deleted.")
 
-    # ---- Commands ----
+    # ---- list ----
     elif command.lower() == "list":
         if not any(program):
             print("(program is empty)")
@@ -251,6 +284,7 @@ while True:
             if ln:
                 print(i + 1, ln)
 
+    # ---- run ----
     elif command.lower() == "run":
         isolated = {}
         try:
@@ -258,13 +292,15 @@ while True:
         except Exception as e:
             print("Runtime error:", e)
 
+    # ---- new ----
     elif command.lower() == "new":
         program = []
         top     = {}
         print("Program cleared.")
 
+    # ---- save ----
     elif command.lower() == "save":
-        filename = remainder.strip(' "')
+        filename = remainder.strip(' "\'')
         if not filename:
             print("Usage: save <filename>")
         else:
@@ -275,8 +311,9 @@ while True:
             except Exception as e:
                 print("Save error:", e)
 
+    # ---- load ----
     elif command.lower() == "load":
-        filename = remainder.strip(' "')
+        filename = remainder.strip(' "\'')
         if not filename:
             print("Usage: load <filename>")
         else:
@@ -287,8 +324,9 @@ while True:
             except Exception as e:
                 print("Load error:", e)
 
+    # ---- cat ----
     elif command.lower() == "cat":
-        filename = remainder.strip(' "')
+        filename = remainder.strip(' "\'')
         if not filename:
             print("Usage: cat <filename>")
         else:
@@ -298,33 +336,32 @@ while True:
             except Exception as e:
                 print("Error:", e)
 
+    # ---- dir ----
     elif command.lower() == "dir":
-        path = remainder.strip(' "') if remainder.strip() else "/"
-        if not path.startswith("/"):
-            path = "/" + path
+        path = _norm_path(remainder) if remainder.strip() else "/"
         try:
-            files = os.listdir(path)
+            entries = os.listdir(path)
             print("Directory:", path)
             print("-" * 32)
-            dirs, ffiles = [], []
-            for n in files:
+            dirs, files = [], []
+            for n in entries:
                 full = path.rstrip("/") + "/" + n
-                sz   = _file_size(full)
-                if sz == -1:
+                if _is_dir(full):
                     dirs.append(n)
                 else:
-                    ffiles.append((n, sz))
+                    files.append((n, _file_size(full)))
             for d in sorted(dirs):
                 print("[" + d + "]")
-            for name, sz in sorted(ffiles):
+            for name, sz in sorted(files):
                 print("{:<20} {:>8} B".format(name, sz))
             print("-" * 32)
-            print(len(dirs), "dir(s),", len(ffiles), "file(s)")
+            print(len(dirs), "dir(s),", len(files), "file(s)")
         except Exception as e:
             print("Error:", e)
 
+    # ---- cd ----
     elif command.lower() == "cd":
-        path = remainder.strip(' "')
+        path = remainder.strip(' "\'')
         if not path:
             print(os.getcwd())
         else:
@@ -334,8 +371,9 @@ while True:
             except Exception as e:
                 print("Error:", e)
 
+    # ---- mkdir ----
     elif command.lower() == "mkdir":
-        path = remainder.strip(' "')
+        path = remainder.strip(' "\'')
         if not path:
             print("Usage: mkdir <dirname>")
         else:
@@ -345,8 +383,21 @@ while True:
             except Exception as e:
                 print("Error:", e)
 
+    # ---- rmdir ----
+    elif command.lower() == "rmdir":
+        path = remainder.strip(' "\'')
+        if not path:
+            print("Usage: rmdir <dirname>")
+        else:
+            try:
+                os.rmdir(path)
+                print("Removed dir:", path)
+            except Exception as e:
+                print("Error:", e)
+
+    # ---- rm ----
     elif command.lower() == "rm":
-        filename = remainder.strip(' "')
+        filename = remainder.strip(' "\'')
         if not filename:
             print("Usage: rm <filename>")
         else:
@@ -356,6 +407,7 @@ while True:
             except Exception as e:
                 print("Error:", e)
 
+    # ---- cp ----
     elif command.lower() == "cp":
         parts = remainder.split()
         if len(parts) != 2:
@@ -367,6 +419,7 @@ while True:
             except Exception as e:
                 print("Error:", e)
 
+    # ---- mv ----
     elif command.lower() == "mv":
         parts = remainder.split()
         if len(parts) != 2:
@@ -378,6 +431,7 @@ while True:
             except Exception as e:
                 print("Error:", e)
 
+    # ---- del ----
     elif command.lower() == "del":
         try:
             n = int(remainder.strip())
@@ -385,74 +439,112 @@ while True:
                 program[n - 1] = ""
                 print("Line", n, "deleted.")
             else:
-                print("Line out of range (1-" + str(len(program)) + ")")
+                print("Line out of range (1 -", len(program), ")")
         except Exception:
             print("Usage: del <line_number>")
 
+    # ---- renum ----
     elif command.lower() == "renum":
         program = [ln for ln in program if ln.strip()]
         print("Compacted to", len(program), "lines:")
         for i, ln in enumerate(program):
             print(i + 1, ln)
 
+    # ---- mem ----
     elif command.lower() == "mem":
         gc.collect()
         free  = gc.mem_free()
         alloc = gc.mem_alloc()
-        print("Memory free :", free,        "B  (", free  // 1024, "KB)")
-        print("Memory used :", alloc,       "B  (", alloc // 1024, "KB)")
-        print("Total       :", free + alloc,"B  (", (free + alloc) // 1024, "KB)")
+        total = free + alloc
+        print("RAM free :", free,  "B (", free  // 1024, "KB)")
+        print("RAM used :", alloc, "B (", alloc // 1024, "KB)")
+        print("RAM total:", total, "B (", total // 1024, "KB)")
 
-    elif command.lower() == "ver":
-        print("CircuitPython:", sys.version)
-        print("Platform     :", sys.platform)
+    # ---- df ----
+    elif command.lower() == "df":
         try:
-            print("CPU freq     :", microcontroller.cpu.frequency // 1_000_000, "MHz")
-            print("CPU temp     :", microcontroller.cpu.temperature, "C")
+            st   = os.statvfs("/")
+            bsz  = st[0]                  # block size
+            tot  = st[2] * bsz            # total bytes
+            free = st[3] * bsz            # free bytes
+            used = tot - free
+            print("Disk total:", tot,  "B (", tot  // 1024, "KB)")
+            print("Disk used :", used, "B (", used // 1024, "KB)")
+            print("Disk free :", free, "B (", free // 1024, "KB)")
+        except Exception as e:
+            print("Error:", e)
+
+    # ---- ver ----
+    elif command.lower() == "ver":
+        try:
+            u = os.uname()
+            print("System  :", u.sysname)
+            print("Release :", u.release)
+            print("Version :", u.version)
+            print("Machine :", u.machine)
+        except Exception as e:
+            print("os.uname error:", e)
+        try:
+            freq = microcontroller.cpu.frequency
+            print("CPU freq:", freq // 1000000, "MHz")
+        except Exception:
+            pass
+        try:
+            temp = microcontroller.cpu.temperature
+            if temp is not None:
+                print("CPU temp:", temp, "C")
         except Exception:
             pass
 
+    # ---- cls ----
     elif command.lower() == "cls":
         clear_screen()
 
+    # ---- reset ----
     elif command.lower() == "reset":
         microcontroller.reset()
 
+    # ---- exit ----
     elif command.lower() == "exit":
         break
 
+    # ---- !help ----
     elif command.lower() == "!help":
         print("""
-Commands:
-  -- Program --
-  list          list current program lines
+=== BasicPython v0.04 command reference ===
+
+  -- Program editing --
+  list          list program lines (non-empty)
   run           execute current program
   new           clear program and variables
-  N <code>      set line N  (blank code = delete)
+  N <code>      set line N to <code>
+  N             (no code) delete line N
   del N         delete line N
-  renum         compact program (remove blank lines)
+  renum         compact: remove blank lines, renumber from 1
 
-  -- Files --
-  load <file>   load .py file into program
+  -- File I/O --
+  load <file>   load a .py file as program
   save <file>   save program to file
-  cat  <file>   print file contents
+  cat  <file>   print file contents to screen
 
   -- Filesystem --
-  dir  [path]   list directory with file sizes
-  cd   [path]   change directory (no arg = show cwd)
+  dir  [path]   list directory (default: /)
+  cd   [path]   change directory (no arg: show cwd)
   mkdir <dir>   create directory
+  rmdir <dir>   remove empty directory
   rm   <file>   delete file
   cp   <s> <d>  copy file
   mv   <s> <d>  rename / move file
 
   -- System --
-  mem           show RAM usage
-  ver           board and CP version info
+  mem           show RAM free / used
+  df            show disk (flash) free / used
+  ver           board info, CP version, CPU freq & temp
   cls           clear screen
   reset         reboot device
   exit          return to REPL
 
-  Any other input is evaluated as Python.
+  Any other input is evaluated as Python directly.
 """)
 
     elif command == "":
