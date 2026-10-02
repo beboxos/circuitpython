@@ -34,6 +34,10 @@ import time
 import random
 import board
 import displayio
+try:
+    from fourwire import FourWire  # CircuitPython 9+
+except ImportError:
+    from displayio import FourWire  # CircuitPython 8
 
 
 from adafruit_display_shapes.sparkline import Sparkline
@@ -58,7 +62,7 @@ if "DISPLAY" not in dir(board):
 
     spi.unlock()
 
-    display_bus = displayio.FourWire(
+    display_bus = FourWire(
         spi,
         command=tft_dc,
         chip_select=tft_cs,
@@ -85,7 +89,7 @@ if "DISPLAY" not in dir(board):
     )
 
     # reset the display to show nothing.
-    display.show(None)
+    display.root_group = None
 else:
     # built-in display
     display = board.DISPLAY
@@ -110,15 +114,14 @@ sparkline1 = Sparkline(
 # Note: In cases where display elements will overlap, then the order the elements
 # are added to the group will set which is on top.  Latter elements are displayed
 # on top of former elemtns.
-my_group = displayio.Group(max_size=1)
+my_group = displayio.Group()
 
 # add the sparkline into my_group
 my_group.append(sparkline1)
 
 
 # Add my_group (containing the sparkline) to the display
-display.show(my_group)
-
+display.root_group = my_group
 # Start the main loop
 while True:
 

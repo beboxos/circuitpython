@@ -8,6 +8,10 @@ import time
 from collections import namedtuple
 import kfw_FeatherS2_board as board
 import displayio
+try:
+    from fourwire import FourWire  # CircuitPython 9+
+except ImportError:
+    from displayio import FourWire  # CircuitPython 8
 from adafruit_display_text.label import Label
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_shapes.rect import Rect
@@ -47,7 +51,7 @@ sd_cs = board.D5
 neopix_pin = board.D11
 pixels = neopixel.NeoPixel(neopix_pin, 1)
 pixels[0] = 0x000000 #turn off neopixel
-display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs)
+display_bus = FourWire(spi, command=tft_dc, chip_select=tft_cs)
 display = adafruit_ili9341.ILI9341(display_bus, width=LCDX, height=LCDY)
 i2c = board.I2C()
 ts = tsc2004.TSC2004(i2c)
@@ -88,9 +92,8 @@ WHITE = 0xFFFFFF
 GRAY = 0x666666
 LABEL_OFFSET = int(SCREEN_WIDTH - (SCREEN_WIDTH/7))
 # Make the display context
-calc_group = displayio.Group(max_size=25)
-display.show(calc_group)
-
+calc_group = displayio.Group()
+display.root_group = calc_group
 # Make a background color fill
 color_bitmap = displayio.Bitmap(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
 color_palette = displayio.Palette(1)
@@ -130,7 +133,7 @@ def find_button(label):
     return result
 
 border = Rect(int(SCREEN_WIDTH/18), 8, (LABEL_OFFSET), 35, fill=WHITE, outline=BLACK, stroke=2)
-calc_display = Label(font, text="0", color=BLACK, max_glyphs=MAX_DIGITS)
+calc_display = Label(font, text="0", color=BLACK)
 calc_display.y = 25
 
 clear_button = add_button(0, 0, "AC")

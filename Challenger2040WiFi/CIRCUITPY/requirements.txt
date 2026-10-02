@@ -1,0 +1,6 @@
+# Libraries from the Adafruit CircuitPython bundle.
+# Install / update them on the board (CIRCUITPY mounted) with:
+#   pip install circup
+#   circup install -r requirements.txt
+adafruit_espatcontrol
+neopixel

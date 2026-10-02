@@ -1,0 +1,3 @@
+# CircuitPython settings (replaces secrets.py)
+CIRCUITPY_WIFI_SSID = "YourAccesPointSSID"
+CIRCUITPY_WIFI_PASSWORD = "PasswordOfAccesspoint"

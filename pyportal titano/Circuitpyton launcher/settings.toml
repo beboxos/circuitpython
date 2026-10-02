@@ -1,0 +1,8 @@
+# CircuitPython 8+ settings file (replaces secrets.py)
+# Copy this file to the root of CIRCUITPY and fill in your values.
+
+CIRCUITPY_WIFI_SSID = "YourAccesPointSSID"
+CIRCUITPY_WIFI_PASSWORD = "PasswordOfAccesspoint"
+
+# Launcher: extra files to hide from the menu (comma separated)
+# LAUNCHER_EXCLUDE = "my_module.py,test.py"

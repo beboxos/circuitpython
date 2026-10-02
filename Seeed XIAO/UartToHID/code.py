@@ -3,10 +3,10 @@ layout = "fr" # fr or us
 import time
 import usb_hid
 from adafruit_hid.keyboard import Keyboard
-import adafruit_ducky
+import ducky_bebox as adafruit_ducky  # BeBoX version: single command mode + ALTGR
 keyboard = Keyboard(usb_hid.devices)
 if layout=="fr": 
-    from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
+    from keyboard_layout_fr import KeyboardLayoutFR
     keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
 else:
     from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS

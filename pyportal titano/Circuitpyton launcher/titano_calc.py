@@ -1,7 +1,7 @@
 """
 PyPortal Titano Calculator Demo
 """
-import microcontroller
+import supervisor  # supervisor.reload() = back to the launcher
 import time
 from collections import namedtuple
 import board
@@ -34,9 +34,8 @@ ts = adafruit_touchscreen.Touchscreen(board.TOUCH_XL, board.TOUCH_XR,
                                       size=(SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Make the display context
-calc_group = displayio.Group(max_size=25)
-board.DISPLAY.show(calc_group)
-
+calc_group = displayio.Group()
+board.DISPLAY.root_group = calc_group
 # Make a background color fill
 color_bitmap = displayio.Bitmap(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
 color_palette = displayio.Palette(1)
@@ -76,7 +75,7 @@ def find_button(label):
     return result
 
 border = Rect(int(SCREEN_WIDTH/18), 8, (LABEL_OFFSET), 35, fill=WHITE, outline=BLACK, stroke=2)
-calc_display = Label(font, text="0", color=BLACK, max_glyphs=MAX_DIGITS)
+calc_display = Label(font, text="0", color=BLACK)
 calc_display.y = 25
 
 clear_button = add_button(0, 0, "AC")
@@ -123,7 +122,7 @@ while True:
         op_button = find_button(last_op)
         # Deselect the last operation when certain buttons are pressed
         if button == "Exit":
-            microcontroller.reset()        
+            supervisor.reload()        
         if op_button is not None:
             if button in ('=', 'AC', 'CE'):
                 op_button.selected = False

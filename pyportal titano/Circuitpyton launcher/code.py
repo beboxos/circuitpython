@@ -1,191 +1,168 @@
 """
-Circuitpython Launcher by BeBoX(c)2021
-this is a simple touch launcher
-initialy made for Adafruit PyPortal Titano
-can be normaly ported to any circuitpython card
-that support adafruit touchscreen library
-in further version will add possibility to use
-GPIO buttons.
+CircuitPython Launcher by BeBoX (c)2021-2026
+A simple touch application launcher.
+Initially made for Adafruit PyPortal Titano, works on any board
+with a resistive touchscreen supported by adafruit_touchscreen
+(PyPortal, PyPortal Pynt, PyPortal Titano...).
+
+v2.0 (2026) - CircuitPython 9/10 rewrite
+  - apps are started with supervisor.set_next_code_file(): no more
+    exec(open()) nor NVM hack, every app runs in a clean interpreter
+  - when an app ends (normally or on error) the launcher comes back
+  - apps are searched at the root of CIRCUITPY and in /apps
+  - Prev / Next page buttons, page indicator
+  - exclusion list configurable from settings.toml (LAUNCHER_EXCLUDE)
+  - font path fallback (/fonts, /font, or built-in terminalio font)
 
 contact :
 email depanet at gmail.com
 twitter : https://twitter.com/BeBoXoS
-
 """
-import microcontroller, os, time
-try:
-    boot=microcontroller.nvm[0:25] #get 25 bytes for boot to launch
-    boot=boot.decode().strip()
-except:
-    boot="nothing"
-print("boot in memory : "+boot)
-if boot!="code.py":
-    #there is a file to launh in memory
-    #first set code.py for next boot
-    Newboot=bytearray(("code.py"+" "*25).encode())
-    print("change for code.py")
-    microcontroller.nvm[0:25]=Newboot[0:25]
-    print("Run "+boot)
-    try:
-        exec(open("./"+boot).read())
-    except:
-        print("error opening : " + boot)
-time.sleep(1)
-def MemStore(file):
-    Newboot=bytearray((file+".py"+" "*25).encode())
-    print("change for "+file+".py")
-    microcontroller.nvm[0:25]=Newboot[0:25]    
-
-# code.py boot selector by BeBoX
-import board , displayio, adafruit_touchscreen
+import os
+import time
+import board
+import displayio
+import supervisor
+import terminalio
+import adafruit_touchscreen
 from adafruit_display_text.label import Label
-from adafruit_bitmap_font import bitmap_font
-from adafruit_display_shapes.rect import Rect
 from adafruit_button import Button
-from collections import namedtuple
-Coords = namedtuple("Point", "x y")
-# Settings
-SCREEN_WIDTH = board.DISPLAY.width
-SCREEN_HEIGHT = board.DISPLAY.height
-BUTTON_WIDTH = int(SCREEN_WIDTH / 5) # was 60
-BUTTON_HEIGHT = int(SCREEN_WIDTH / 10) # was 30
-BUTTON_MARGIN = 8
-MAX_DIGITS = 29
-BLACK = 0x0
-ORANGE = 0xFF8800
-BLUE = 0x0088FF
+
+# --- Settings -------------------------------------------------------------
+APP_DIRS = ("/", "/apps")
+EXCLUDE = {"code.py", "main.py", "boot.py", "secrets.py", "settings.py",
+           "calculator.py"}  # calculator.py is a module of titano_calc.py
+# Extra exclusions: LAUNCHER_EXCLUDE = "foo.py,bar.py" in settings.toml
+EXCLUDE.update(n.strip() for n in (os.getenv("LAUNCHER_EXCLUDE") or "").split(",") if n.strip())
+
+COLS = 2
+ROWS = 4
+PER_PAGE = COLS * ROWS
+MARGIN = 8
+TOP = 44
+
+BLACK = 0x000000
 WHITE = 0xFFFFFF
 GRAY = 0x666666
-LABEL_OFFSET = int(SCREEN_WIDTH - (SCREEN_WIDTH/7))
-ts = adafruit_touchscreen.Touchscreen(board.TOUCH_XL, board.TOUCH_XR,
-                                      board.TOUCH_YD, board.TOUCH_YU,
-                                      calibration=((5200, 59000), (5800, 57000)),
-                                      size=(SCREEN_WIDTH, SCREEN_HEIGHT))
+ORANGE = 0xFF8800
 
-# Make the display context
-calc_group = displayio.Group(max_size=25)
-board.DISPLAY.show(calc_group)
-# Make a background color fill
-color_bitmap = displayio.Bitmap(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
-color_palette = displayio.Palette(1)
-color_palette[0] = GRAY
-bg_sprite = displayio.TileGrid(color_bitmap,
-                               pixel_shader=color_palette,
-                               x=0, y=0)
-calc_group.append(bg_sprite)
-board.DISPLAY.show(calc_group)
-# Load the font
-font = bitmap_font.load_font("/fonts/Arial-12.bdf")
-# Title Font
-font2 = bitmap_font.load_font("/fonts/Arial-Bold-24.bdf")
-#Title
-title = Label(font2, text="CircuitPython Launcher", color=BLACK)
-title.y = 20
-title.x = 47
-title2 = Label(font2, text="CircuitPython Launcher", color=WHITE)
-title2.y = 24
-title2.x = 51
-calc_group.append(title)
-calc_group.append(title2)
-board.DISPLAY.show(calc_group)
+display = board.DISPLAY
+W, H = display.width, display.height
 
-buttons = []
 
-# Some button functions
-def button_grid(row, col):
-    return Coords(BUTTON_MARGIN * (row + 1) + BUTTON_WIDTH * row + 20,
-                  BUTTON_MARGIN * (col + 1) + BUTTON_HEIGHT * col + 40)
+def load_font(name):
+    for folder in ("/fonts/", "/font/"):
+        try:
+            from adafruit_bitmap_font import bitmap_font
+            return bitmap_font.load_font(folder + name)
+        except (OSError, ImportError):
+            pass
+    return terminalio.FONT
 
-def add_button(row, col, label, width=1, color=WHITE, text_color=BLACK):
-    pos = button_grid(row, col)
-    new_button = Button(x=pos.x, y=pos.y,
-                        width=BUTTON_WIDTH * width + BUTTON_MARGIN * (width - 1),
-                        height=BUTTON_HEIGHT, label=label, label_font=font,
-                        label_color=text_color, fill_color=color, style=Button.ROUNDRECT)
-    buttons.append(new_button)
-    return new_button
 
-def find_button(label):
-    result = None
-    for _, btn in enumerate(buttons):
-        if btn.label == label:
-            result = btn
-    return result
+def find_apps():
+    apps = []
+    for folder in APP_DIRS:
+        try:
+            names = os.listdir(folder)
+        except OSError:
+            continue
+        for n in names:
+            if n.endswith(".py") and not n.startswith(".") and n not in EXCLUDE:
+                apps.append(folder.rstrip("/") + "/" + n)
+    return sorted(apps, key=lambda p: p.rsplit("/", 1)[-1].lower())
 
-ListFiles = os.listdir("/")
-MenuFiles = []
-for n in ListFiles:
-    if n[-3:]==".py":
-        #need to impove, file to not show in menu
-        #exlude secrets.py and of course code.py
-        if n!="secrets.py" and n!="code.py" and n!="calculator.py":
-            MenuFiles.append(n)
-#print(MenuFiles)
-index = 0
-def DrawMenu(start):
-    col =0
-    lig =0
-    global index
-    index = 0
-    for n in MenuFiles:
-        if index-start<9 and index>=start:
-            print(MenuFiles[index]+" "+str(index)+" at "+str(col)+","+str(lig))
-            add_button(col, lig, MenuFiles[index][:-3],2)
-            if col==0:
-                col=2
-            else:
-                col=0
-                lig=lig+1
-        index=index+1
-                
-    if index-start>9:
-        add_button(2, 4, "Next ... "+str(int((start+9)/9)),2, ORANGE, WHITE)
-    else:
-        if start!=0:
-            add_button(2, 4, "Next ... 0",2, ORANGE, WHITE)
 
-    for b in buttons:
-        calc_group.append(b)
+def launch(path):
+    print("Launching", path)
+    if hasattr(supervisor, "set_next_code_file"):
+        # come back to the launcher when the app ends or crashes
+        supervisor.set_next_code_file(path, reload_on_success=True,
+                                      reload_on_error=True)
+        supervisor.reload()
+    else:  # very old CircuitPython fallback
+        exec(open(path).read(), {"__name__": "__main__"})
 
-#initial page
-DrawMenu(0)
-print(len(buttons))
 
-board.DISPLAY.show(calc_group)
-button = ""
+ts = adafruit_touchscreen.Touchscreen(
+    board.TOUCH_XL, board.TOUCH_XR, board.TOUCH_YD, board.TOUCH_YU,
+    calibration=((5200, 59000), (5800, 57000)), size=(W, H))
+
+font = load_font("Arial-12.bdf")
+title_font = load_font("Arial-Bold-24.bdf")
+
+root = displayio.Group()
+bg = displayio.Bitmap(W, H, 1)
+bg_palette = displayio.Palette(1)
+bg_palette[0] = GRAY
+root.append(displayio.TileGrid(bg, pixel_shader=bg_palette))
+for dx, color in ((0, BLACK), (3, WHITE)):  # drop shadow title
+    t = Label(title_font, text="CircuitPython Launcher", color=color,
+              anchor_point=(0.5, 0.5), anchored_position=(W // 2 + dx, 20 + dx))
+    root.append(t)
+page_group = displayio.Group()
+root.append(page_group)
+display.root_group = root
+
+apps = find_apps()
+pages = max(1, (len(apps) + PER_PAGE - 1) // PER_PAGE)
+btn_w = (W - MARGIN * (COLS + 1)) // COLS
+btn_h = (H - TOP - MARGIN * (ROWS + 2)) // (ROWS + 1)
+buttons = []  # (Button, action)
+
+
+def draw_page(page):
+    while len(page_group):
+        page_group.pop()
+    buttons.clear()
+    for i, path in enumerate(apps[page * PER_PAGE:(page + 1) * PER_PAGE]):
+        col, row = i % COLS, i // COLS
+        b = Button(x=MARGIN + col * (btn_w + MARGIN),
+                   y=TOP + MARGIN + row * (btn_h + MARGIN),
+                   width=btn_w, height=btn_h,
+                   label=path.rsplit("/", 1)[-1][:-3], label_font=font,
+                   label_color=BLACK, fill_color=WHITE, style=Button.ROUNDRECT)
+        buttons.append((b, path))
+    y = TOP + MARGIN + ROWS * (btn_h + MARGIN)
+    if not apps:
+        page_group.append(Label(font, text="No app found in / or /apps",
+                                color=WHITE, x=MARGIN, y=y))
+    if pages > 1:
+        nav_w = (W - MARGIN * 4) // 3
+        for col, label, action in ((0, "< Prev", "prev"), (2, "Next >", "next")):
+            buttons.append((Button(x=MARGIN + col * (nav_w + MARGIN), y=y,
+                                   width=nav_w, height=btn_h, label=label,
+                                   label_font=font, label_color=WHITE,
+                                   fill_color=ORANGE, style=Button.ROUNDRECT), action))
+        page_group.append(Label(font, text="{}/{}".format(page + 1, pages),
+                                color=WHITE, anchor_point=(0.5, 0.5),
+                                anchored_position=(W // 2, y + btn_h // 2)))
+    for b, _ in buttons:
+        page_group.append(b)
+
+
+page = 0
+draw_page(page)
+pressed = None
 while True:
     point = ts.touch_point
-    if point is not None:
-        # Button Down Events
-        for _, b in enumerate(buttons):
-            if b.contains(point) and button == "":
-                b.selected = True
-                button = b.label
-                if button[:8]!="Next ...":
-                    matching = [s for s in MenuFiles if button in s]
-                    print(matching)
-                    #time.sleep(100)
-                    try:
-                        MemStore(matching[0][:-3])
-                        print (matching[0][:-3])
-                        microcontroller.reset()
-                    except:
-                        print("error not found")
-                else:
-                    # Next button
-                    b.selected = False
-                    print("o-------------o")
-                    page=int(button[-1])
-                    for n in range(len(calc_group),2,-1):
-                        try:
-                            calc_group.pop(n)
-                        except:
-                            pass
-                    buttons=[]
-                    button = ""
-                    DrawMenu(page*9)               
-    elif button != "":
-        # Button Up Events
-        b = find_button(button)
+    if point:
+        if pressed is None:
+            for b, action in buttons:
+                if b.contains(point):
+                    b.selected = True
+                    pressed = (b, action)
+                    break
+    elif pressed:
+        b, action = pressed
         b.selected = False
-        button = ""
+        pressed = None
+        if action == "next":
+            page = (page + 1) % pages
+            draw_page(page)
+        elif action == "prev":
+            page = (page - 1) % pages
+            draw_page(page)
+        else:
+            launch(action)
+    time.sleep(0.02)
