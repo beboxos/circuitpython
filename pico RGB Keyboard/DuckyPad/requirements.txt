@@ -5,3 +5,4 @@
 adafruit_bus_device
 adafruit_dotstar
 adafruit_hid
+# (adafruit_hid provides consumer_control for the media keys)

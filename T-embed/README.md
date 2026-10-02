@@ -26,3 +26,19 @@ screen show the remaining time.
 `code.py` uses the built-in `board.DISPLAY` when the firmware provides it and initializes the
 ST7789 itself otherwise (`boot.py` does the same for older firmwares, so the console shows up on
 screen at boot).
+
+## Multi-tool
+
+`multi tool/CIRCUITPY/` is a menu of time tools in a single file:
+
+| Tool | What it does |
+|---|---|
+| Timer | Countdown with pause/resume, LED ring + beeps |
+| Stopwatch | Count up, press = start/stop, long press = reset |
+| Pomodoro | 25 min work / 5 min break cycles |
+| Clock | HH:MM:SS, set over Wi-Fi/NTP when `settings.toml` has Wi-Fi |
+
+Controls everywhere: **turn** the knob to move/adjust, **press** to select/start/pause,
+**long press (1 s)** to go back to the menu. Install the libraries with
+`circup install -r requirements.txt`; add `CIRCUITPY_WIFI_SSID` / `CIRCUITPY_WIFI_PASSWORD`
+(and optional `TZ_OFFSET`) to `settings.toml` for the NTP clock.

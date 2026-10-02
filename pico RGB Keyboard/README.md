@@ -8,11 +8,15 @@
 into a 16-key macro pad: each key types a [DuckyScript](https://docs.hak5.org/hak5-usb-rubber-ducky)
 file over USB HID.
 
-| Key | Script |
-|---|---|
-| 1st … 16th | `ducky/0.txt` … `ducky/F.txt` |
+### v2.0 (2026) — pages + media keys
 
-- The pressed key lights up red while its script runs; key 0 blinks blue when idle.
+- **Bottom-right key (15)** cycles pages; each page has its own LED color.
+- **Keys 0..14** run that page's DuckyScript, or send a media key on the MEDIA page.
+- Pages come from `ducky/`:
+  - `ducky/1/0.txt` … `ducky/1/E.txt` (page 1), `ducky/2/…` (page 2), …
+  - with no numbered sub-folders, the flat `ducky/0.txt` … `E.txt` is page 1 (old layouts keep working).
+  - a built-in **MEDIA** page is always added last: Vol-, Vol+, Mute, Play/Pause, Next, Prev, Stop.
+- The pressed key lights up red while its script runs.
 - Keyboard layout: edit `hid_layout.py` (`"fr"` = French AZERTY with AltGr support, `"us"`).
 - `lib/ducky_bebox.py` is a modified `adafruit_ducky` (ALTGR key, a single command can be passed
   instead of a file name). It has its own name so `circup update` never overwrites it.
