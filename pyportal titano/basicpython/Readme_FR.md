@@ -16,7 +16,7 @@
  ║          ╚═╝        ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝║
  ║                                                              ║
  ║                M A N U E L   U T I L I S A T E U R          ║
- ║                        Version 0.05                          ║
+ ║                        Version 0.06                          ║
  ║                                                              ║
  ║          Pour Adafruit PyPortal Titano — CircuitPython       ║
  ║                  avec clavier M5Stack CardKB                 ║
@@ -131,7 +131,7 @@ Au démarrage de BasicPython, vous verrez :
   * | _ \/ _` |(_-/| |/ _||  _/ \_.  ||  _||   \ / _ \| ' \  *
   * |___/\__/_|/__/|_|\__||_|   |__/  \__||_||_|\___/|_||_| *
   ***********************************************************
-  v0.05 for CircuitPython - keyboard: CardKB (I2C)
+  v0.06 for CircuitPython - keyboard: CardKB / BBQ10 / USB
 
   Enter !help for command list
 
@@ -795,6 +795,61 @@ Les variables et les imports sont conservés pendant toute la session dans un es
 
 ---
 
+## 5.9 — MODE LANGAGE BASIC (NOUVEAU EN v0.06)
+
+```
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  UN VRAI BASIC DES ANNÉES 80, DIRECTEMENT SUR VOTRE GADGET.     │
+  │  Tapez `basic` pour que RUN exécute le programme en BASIC, et   │
+  │  `py` pour revenir au Python (par défaut). L'invite affiche     │
+  │  `BASIC >>>` quand le moteur BASIC est actif.                   │
+  └─────────────────────────────────────────────────────────────────┘
+
+  EXEMPLE
+    basic
+    10 PRINT "FACTORIELLES :"
+    20 FOR N = 1 TO 5
+    30 F = 1
+    40 FOR K = 1 TO N
+    50 F = F * K
+    60 NEXT K
+    70 PRINT N; "! = "; F
+    80 NEXT N
+    run
+
+  INSTRUCTIONS
+    PRINT a; b, c     afficher (; = coller, , = tab, ; final = pas de saut)
+    LET A = expr      affecter (LET facultatif : A = expr marche aussi)
+    INPUT "p"; A      demander à l'utilisateur (A$ pour une chaîne)
+    IF cond THEN ...  THEN une instruction, ou THEN <ligne> pour un GOTO
+    GOTO n            saut à la ligne n
+    GOSUB n / RETURN  appel / retour de sous-programme
+    FOR A=1 TO 9 [STEP p] ... NEXT [A]
+    REM texte         commentaire
+    END / STOP        arrêter le programme
+    WAIT ms           pause
+
+  GRAPHISME & SON (écran / haut-parleur requis, ignorés sinon)
+    CLS               efface l'écran
+    COLOR n           couleur du crayon 0..9
+    PLOT x, y         trace un point
+    LINE x1,y1,x2,y2  trace une ligne
+    BEEP [freq[,ms]]  joue un son
+
+  EXPRESSIONS
+    + - * /  MOD, parenthèses, = <> < > <= >=, AND OR NOT
+    fonctions : ABS INT RND SGN SQR LEN CHR ASC MIN MAX STR VAL
+    RND(n) = 1..n, les chaînes utilisent des noms A$
+
+  AUTOEXEC
+    autoexec.bas (ou autoexec.py) à la racine se lance au démarrage.
+
+  Des programmes d'exemple sont dans le dossier examples/ :
+    load examples/hello.bas  puis  basic  puis  run
+```
+
+---
+
 # 6. PROGRAMMES D'EXEMPLE
 
 ---
@@ -982,7 +1037,7 @@ Après exécution, relisez-la avec :
 
 ```
   ┌───────────────────────────────────────────────────────────┐
-  │  BasicPython v0.05 — (c) 2021-2026 @beboxos              │
+  │  BasicPython v0.06 — (c) 2021-2026 @beboxos              │
   │  Basé sur le travail original de Scott Shawcroft         │
   │  https://github.com/tannewt/basicpython                  │
   │  https://twitter.com/beboxos                             │
@@ -995,4 +1050,12 @@ Après exécution, relisez-la avec :
                    traces d'erreur avec numéros de ligne
                    Corrigé : plantage au démarrage sans périphérique I2C
                    Compatible CircuitPython 9.x / 10.x
+  v0.06  2026-10   Vrai moteur de langage BASIC (basic.py) : PRINT
+                   INPUT LET IF/THEN GOTO GOSUB/RETURN FOR/NEXT REM
+                   END, CLS COLOR PLOT LINE BEEP WAIT, expressions et
+                   fonctions. `basic` / `py` changent le moteur RUN.
+                   autoexec.bas / autoexec.py au démarrage. boot.py rend
+                   CIRCUITPY inscriptible (save). Clavier BBQ10 via
+                   bebox_common (tourne sur le Keyboard FeatherWing).
+                   Programmes .bas d'exemple dans examples/.
 

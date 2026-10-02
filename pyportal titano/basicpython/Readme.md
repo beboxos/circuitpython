@@ -16,7 +16,7 @@
  ║          ╚═╝        ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝║
  ║                                                              ║
  ║                  U S E R ' S   M A N U A L                   ║
- ║                        Version 0.05                          ║
+ ║                        Version 0.06                          ║
  ║                                                              ║
  ║          For Adafruit PyPortal Titano — CircuitPython        ║
  ║                  with M5Stack CardKB keyboard                ║
@@ -128,7 +128,7 @@ When BasicPython starts, you will see:
   * | _ \/ _` |(_-/| |/ _||  _/ \_.  ||  _||   \ / _ \| ' \  *
   * |___/\__/_|/__/|_|\__||_|   |__/  \__||_||_|\___/|_||_| *
   ***********************************************************
-  v0.05 for CircuitPython - keyboard: CardKB (I2C)
+  v0.06 for CircuitPython - keyboard: CardKB / BBQ10 / USB
 
   Enter !help for command list
 
@@ -792,6 +792,61 @@ Variables and imports are preserved throughout the session in a shared namespace
 
 ---
 
+## 5.9 — BASIC LANGUAGE MODE (NEW IN v0.06)
+
+```
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  A REAL 80's BASIC, RIGHT ON YOUR GADGET.                       │
+  │  Type `basic` to make RUN execute your program as BASIC, and    │
+  │  `py` to go back to Python (the default). The prompt shows      │
+  │  `BASIC >>>` while the BASIC engine is active.                  │
+  └─────────────────────────────────────────────────────────────────┘
+
+  EXAMPLE
+    basic
+    10 PRINT "FACTORIALS:"
+    20 FOR N = 1 TO 5
+    30 F = 1
+    40 FOR K = 1 TO N
+    50 F = F * K
+    60 NEXT K
+    70 PRINT N; "! = "; F
+    80 NEXT N
+    run
+
+  STATEMENTS
+    PRINT a; b, c     print (; = join, , = tab, trailing ; = no newline)
+    LET A = expr      assign (LET is optional: A = expr works too)
+    INPUT "p"; A      ask the user (A$ for a string)
+    IF cond THEN ...  THEN a statement, or THEN <line> to GOTO
+    GOTO n            jump to line n
+    GOSUB n / RETURN  call / return from a subroutine
+    FOR A=1 TO 9 [STEP s] ... NEXT [A]
+    REM text          comment
+    END / STOP        stop the program
+    WAIT ms           pause
+
+  GRAPHICS & SOUND (need a screen / speaker, ignored otherwise)
+    CLS               clear the screen
+    COLOR n           pen color 0..9
+    PLOT x, y         draw a point
+    LINE x1,y1,x2,y2  draw a line
+    BEEP [freq[,ms]]  play a tone
+
+  EXPRESSIONS
+    + - * /  MOD, parentheses, = <> < > <= >=, AND OR NOT
+    functions: ABS INT RND SGN SQR LEN CHR ASC MIN MAX STR VAL
+    RND(n) = 1..n, strings use A$ names
+
+  AUTOEXEC
+    autoexec.bas (or autoexec.py) at the root runs automatically at boot.
+
+  Example programs are in the examples/ folder:
+    load examples/hello.bas  then  basic  then  run
+```
+
+---
+
 # 6. SAMPLE PROGRAMS
 
 ---
@@ -966,13 +1021,21 @@ After running, you can read it back with:
                    tracebacks with line numbers
                    Fixed: crash at boot without I2C device
                    API compatible with CircuitPython 9.x / 10.x
+  v0.06  2026-10   Real BASIC language engine (basic.py): PRINT INPUT
+                   LET IF/THEN GOTO GOSUB/RETURN FOR/NEXT REM END,
+                   CLS COLOR PLOT LINE BEEP WAIT, expressions and
+                   functions. `basic` / `py` switch the RUN engine.
+                   autoexec.bas / autoexec.py at boot. boot.py makes
+                   CIRCUITPY writable (save). BBQ10 keyboard support
+                   via bebox_common (runs on the Keyboard FeatherWing).
+                   Example .bas programs in examples/.
 ```
 
 ---
 
 ```
   ┌───────────────────────────────────────────────────────────┐
-  │  BasicPython v0.05 — (c) 2021-2026 @beboxos              │
+  │  BasicPython v0.06 — (c) 2021-2026 @beboxos              │
   │  Based on original work by Scott Shawcroft               │
   │  https://github.com/tannewt/basicpython                  │
   │  https://twitter.com/beboxos                             │

@@ -49,7 +49,7 @@ import sys
 import time
 import microcontroller
 
-VERSION = "0.05"
+VERSION = "0.06"
 
 # ============================================================
 # Keyboard backends
@@ -132,6 +132,14 @@ class SerialKB:
 
 
 def find_keyboard():
+    # Prefer bebox_common: it also drives the BlackBerry Q10 keyboard, so
+    # BasicPython runs on the Keyboard FeatherWing too. The KEY_* tokens are
+    # the same strings, so the rest of this file does not change.
+    try:
+        from bebox_common.keyboard import find_keyboard as _find
+        return _find()
+    except ImportError:
+        pass
     try:
         import board
         import busio
@@ -287,7 +295,7 @@ def _confirm(question):
 
 program = []      # program[n-1] is BASIC line n
 top = {"input": kb_input}
-state = {"file": None, "dirty": False, "auto": None}
+state = {"file": None, "dirty": False, "auto": None, "engine": "python"}
 
 
 def set_line(n, code):
@@ -330,6 +338,141 @@ def run_source(source):
 
 
 # ============================================================
+# BASIC engine (see basic.py)  +  optional graphics / sound hooks
+# ============================================================
+
+class DisplayHooks:
+    """CLS / COLOR / PLOT / LINE / BEEP for the BASIC engine.
+
+    Uses board.DISPLAY when available (bitmap pixel plotting) and the on-board
+    speaker/buzzer for BEEP. Every method degrades gracefully: on a board
+    without a display or speaker it simply does nothing, so a BASIC program
+    still runs.
+    """
+    PALETTE = (0x000000, 0xFFFFFF, 0xFF0000, 0x00FF00, 0x0000FF,
+               0xFFFF00, 0x00FFFF, 0xFF00FF, 0xFF8800, 0x888888)
+
+    def __init__(self):
+        self.ok = False
+        self.color_index = 1
+        try:
+            import board
+            import displayio
+            self.displayio = displayio
+            self.display = board.DISPLAY
+            self.w, self.h = self.display.width, self.display.height
+            self._build()
+            self.ok = True
+        except Exception:  # no display on this board
+            pass
+
+    def _build(self):
+        self.bitmap = self.displayio.Bitmap(self.w, self.h, len(self.PALETTE))
+        pal = self.displayio.Palette(len(self.PALETTE))
+        for i, c in enumerate(self.PALETTE):
+            pal[i] = c
+        self.group = self.displayio.Group()
+        self.group.append(self.displayio.TileGrid(self.bitmap, pixel_shader=pal))
+        self.display.root_group = self.group
+
+    def cls(self):
+        if self.ok:
+            for i in range(self.w * self.h):
+                self.bitmap[i] = 0
+
+    def color(self, n):
+        self.color_index = max(0, min(len(self.PALETTE) - 1, int(n)))
+
+    def plot(self, x, y):
+        if self.ok and 0 <= x < self.w and 0 <= y < self.h:
+            self.bitmap[int(x), int(y)] = self.color_index
+
+    def line(self, x1, y1, x2, y2):
+        if not self.ok:
+            return
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        dx = abs(x2 - x1)
+        dy = -abs(y2 - y1)
+        sx = 1 if x1 < x2 else -1
+        sy = 1 if y1 < y2 else -1
+        err = dx + dy
+        while True:
+            self.plot(x1, y1)
+            if x1 == x2 and y1 == y2:
+                break
+            e2 = 2 * err
+            if e2 >= dy:
+                err += dy
+                x1 += sx
+            if e2 <= dx:
+                err += dx
+                y1 += sy
+
+    def beep(self, freq=880, ms=120):
+        try:
+            import time
+            import board
+            import array
+            import math
+            import audiocore
+            length = 8000 // max(1, int(freq))
+            wave = array.array("H", [int((math.sin(2 * math.pi * i / length) + 1)
+                                         * 32767) for i in range(length)])
+            sample = audiocore.RawSample(wave, sample_rate=8000)
+            out = None
+            try:
+                import audioio
+                out = audioio.AudioOut(board.SPEAKER)
+            except (ImportError, AttributeError):
+                try:
+                    import audiopwmio
+                    out = audiopwmio.PWMAudioOut(board.SPEAKER)
+                except (ImportError, AttributeError):
+                    return
+            try:
+                if hasattr(board, "SPEAKER_ENABLE"):
+                    import digitalio
+                    en = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
+                    en.switch_to_output(value=True)
+            except Exception:
+                pass
+            out.play(sample, loop=True)
+            time.sleep(int(ms) / 1000.0)
+            out.stop()
+            out.deinit()
+        except Exception:
+            pass
+
+
+_hooks = None
+
+
+def _get_hooks():
+    global _hooks
+    if _hooks is None:
+        _hooks = DisplayHooks()
+    return _hooks
+
+
+def run_basic(lines):
+    try:
+        import basic
+    except ImportError:
+        print("basic.py not found (copy it next to code.py)")
+        return
+    try:
+        basic.run([ln for ln in lines if ln.strip()],
+                  hooks=_get_hooks(), printer=print, reader=kb_input)
+    except KeyboardInterrupt:
+        print("\nBREAK")
+    except basic.BasicError as e:
+        print("?", e)
+    except Exception as e:  # pylint: disable=broad-except
+        print("Runtime error:", e)
+    gc.collect()
+
+
+# ============================================================
 # Commands  (each one receives the text after the command name)
 # ============================================================
 
@@ -364,9 +507,31 @@ def cmd_run(arg):
         except OSError as e:
             print("Error:", e)
             return
-        run_source(src)
+        if name.lower().endswith(".bas"):
+            run_basic(src.split("\n"))
+        else:
+            run_source(src)
+    elif state["engine"] == "basic":
+        # the editor stores line N at program[N-1] without its number;
+        # rebuild "<N> <code>" lines for the BASIC interpreter
+        run_basic(["{} {}".format(i + 1, code)
+                   for i, code in enumerate(program) if code.strip()])
     else:
         run_source("\n".join(program))
+
+
+def _set_engine(engine):
+    state["engine"] = engine
+    print("Engine:", engine.upper(), "- RUN executes your program as",
+          engine.upper())
+
+
+def cmd_basic(arg):
+    _set_engine("basic")
+
+
+def cmd_python(arg):
+    _set_engine("python")
 
 
 def cmd_new(arg):
@@ -658,7 +823,19 @@ HELP = """
   reset         reboot device
   exit          return to the CircuitPython REPL
 
-  Anything else is executed as Python (expressions are printed).
+  -- Language engine --
+  basic         RUN executes the program as BASIC (see below)
+  py / python   RUN executes the program as Python (default)
+  run <f.bas>   run a .bas file as BASIC whatever the engine
+
+  BASIC keywords: PRINT INPUT LET IF..THEN GOTO GOSUB/RETURN
+  FOR..TO..STEP/NEXT REM END  and, with a screen/speaker:
+  CLS COLOR n PLOT x,y LINE x1,y1,x2,y2 BEEP [freq,ms] WAIT ms
+
+  autoexec.bas (or autoexec.py) at the root runs automatically at boot.
+
+  Anything typed at the prompt is executed as Python (expressions
+  are printed); the engine only changes what RUN does.
 """.format(VERSION)
 
 
@@ -675,6 +852,7 @@ COMMANDS = {
     "renum": cmd_renum, "find": cmd_find, "vars": cmd_vars,
     "history": cmd_history, "mem": cmd_mem, "df": cmd_df, "ver": cmd_ver,
     "time": cmd_time, "cls": cmd_cls, "reset": cmd_reset, "exit": cmd_exit,
+    "basic": cmd_basic, "bas": cmd_basic, "py": cmd_python, "python": cmd_python,
     "!help": lambda arg: print(HELP), "help": lambda arg: print(HELP),
 }
 
@@ -738,6 +916,25 @@ print("""
 print("v{} for CircuitPython - keyboard: {}".format(VERSION, kb.name))
 print("Enter help for command list\n")
 
+
+def run_autoexec():
+    """At boot, run autoexec.bas (BASIC) or autoexec.py (Python) if present."""
+    for name, engine in (("autoexec.bas", "basic"), ("autoexec.py", "python")):
+        try:
+            with open(name) as f:
+                src = f.read()
+        except OSError:
+            continue
+        print("Running", name, "...")
+        if engine == "basic":
+            run_basic(src.split("\n"))
+        else:
+            run_source(src)
+        break
+
+
+run_autoexec()
+
 quiet = False
 while True:
     try:
@@ -750,7 +947,8 @@ while True:
             else:
                 state["auto"] = None
             continue
-        line = read_line(">>>" if quiet else "READY.\n>>>")
+        tag = "" if state["engine"] == "python" else "BASIC "
+        line = read_line(("" if quiet else "READY.\n") + tag + ">>>")
         quiet = handle(line)
     except KeyboardInterrupt:
         state["auto"] = None
