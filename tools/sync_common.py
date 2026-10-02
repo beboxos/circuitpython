@@ -23,6 +23,7 @@ TARGETS = [
     "MagTag/BootAppSelector/lib",
     "Keyboard_Featherwing/FeatherS2/lib",
     "WIO terminal/SmartTerminal/lib",
+    "ATMegaZero S2/BootMenu/lib",
 ]
 
 
