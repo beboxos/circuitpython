@@ -69,7 +69,7 @@ tile_grid.x = 298-104
 group.append(tile_grid)
 print("group len" + str(len(group)))
 # Show the group and refresh the screen to see the result
-display.show(group)
+display.root_group = group
 display.refresh()
 time.sleep(5)
 group.pop()
@@ -82,8 +82,7 @@ display.refresh()
 time.sleep(5)
 # Loop forever so you can enjoy your message
 splash = displayio.Group()
-display.show(splash)
-
+display.root_group = splash
 # Make a background color fill
 color_bitmap = displayio.Bitmap(display.width, display.height, 1)
 color_palette = displayio.Palette(1)
@@ -132,7 +131,7 @@ splash.append(roundrect)
 
 display.refresh()
 time.sleep(5)
-display.show(group)
+display.root_group = group
 display.refresh()
 time.sleep(5)
 def bitmap_QR(matrix):
@@ -172,16 +171,16 @@ qr_img = displayio.TileGrid(qr_bitmap, pixel_shader=palette, x=pos_x, y=pos_y)
 
 splash2 = displayio.Group(scale=scale)
 splash2.append(qr_img)
-board.DISPLAY.show(splash2)
+board.DISPLAY.root_group = splash2
 display.refresh()
 time.sleep(5)
-board.DISPLAY.show(splash)
+board.DISPLAY.root_group = splash
 display.refresh()
 time.sleep(5)
-board.DISPLAY.show(group)
+board.DISPLAY.root_group = group
 display.refresh()
 time.sleep(5)
-board.DISPLAY.show(splash2)
+board.DISPLAY.root_group = splash2
 display.refresh()
 print("end..")
 time.sleep(5)

@@ -1,0 +1,32 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python syntax of every .py file
+        run: |
+          python - <<'PY'
+          import ast, pathlib, sys
+          bad = 0
+          for p in pathlib.Path(".").rglob("*.py"):
+              try:
+                  ast.parse(p.read_bytes(), str(p))
+              except SyntaxError as e:
+                  print(f"::error file={p},line={e.lineno}::{e.msg}")
+                  bad += 1
+          sys.exit(bad)
+          PY
+      - name: No legacy CircuitPython 7/8 display API outside lib/
+        run: |
+          ! grep -rnE "^\s*[A-Za-z_.]*(display|DISPLAY)\.show\(|max_glyphs|Group\(max_size|displayio\.FourWire\(" --include=*.py . | grep -v "/lib/"
+      - name: bebox_common copies are in sync with common/
+        run: python3 tools/sync_common.py --check

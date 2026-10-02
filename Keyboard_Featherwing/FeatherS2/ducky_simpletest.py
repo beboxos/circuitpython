@@ -9,7 +9,7 @@ from adafruit_hid.keyboard import Keyboard
 import adafruit_ducky
 keyboard = Keyboard(usb_hid.devices)
 if layout["lang"]=="fr": 
-    from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
+    from keyboard_layout_fr import KeyboardLayoutFR
     keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
 else:
     from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS

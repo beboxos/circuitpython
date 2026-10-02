@@ -1,37 +1,44 @@
-<h1> Circuitpython Launcher For Pyportal Titano </h1>
+<h1> CircuitPython Launcher For PyPortal Titano </h1>
 
 ![Launcher](launcher.png) <br/>
 
-Welcome to the Circuitpython launcher section. <br/>
- <br/>
- 
- [demo video](https://www.youtube.com/watch?v=-bFsBaRWSHk)
- 
-This launcher can bring 8 pages of 8 programs, that is 64 entries. <br/>
-It builds itself from the files present at the root of CIRCUITPY.  <br/>
-by default are excluded from the list the files : <br/>
-* code.py (itself) 
-* secrets.py (no interest) 
-* (and calculator.py because it is a module of calculation for the calculator application titano_calc).
- <br/>
-the limit of the file names is 24 characters (.py included) that is to say 21 characters because it stores in the non-volatile memory (in the 25 first bytes) the file name to be launched at the next reset. <br/>
- <br/>
- 
-If you want to exclude other files you can always add them in [code.py at line 121](https://github.com/beboxos/circuitpython/blob/a470852d9fb7b90fc01971e96d4b7b3bbc51355a/pyportal%20titano/Circuitpyton%20launcher/code.py#L121)
+[demo video](https://www.youtube.com/watch?v=-bFsBaRWSHk)
 
-When you write your application to leave and return to the menu, it is enough to make a reset of your card for that 3 cases: <br/>
-* Press the reset button of your card
-* Cut and put back the power supply 
-* Import microcontroller and use the command microcontroller.reset()
- <br/>
-You can see the examples I put to see microcontroller.reset() in action. <br/>
-For some reason, it happens sometimes, that some python script doesn't work and I am trying to understand why.  <br/>
+A touch application launcher for CircuitPython. It builds its menu from the `.py` files found at
+the root of CIRCUITPY and in `/apps`: 8 apps per page, with **< Prev** / **Next >** buttons when
+there are more.
 
-Several reasons:  <br/>
-* The fact of calling python files via the OS lib with exec(open()) poses a problem (I would have to see if there is a way to pass by an import
-* Unsupported characters in the file name 
+## v2.0 (2026) — CircuitPython 9 / 10
 
-**possible / future improvements :**  <br/>
-* Take into account the fact of navigating the menu via physical buttons (for devices without touch functions).
-* Read the files to launch from an SD card (for cards without much memory)
-* The possibility to switch to landscape or portrait mode
+- Apps are started with `supervisor.set_next_code_file()`: each app runs in a fresh interpreter
+  (no more `exec(open())`, no more NVM storage, no more 21-character file name limit).
+- When an app ends — normally or with an error — the launcher comes back automatically.
+  An app can also return to the menu at any time with `supervisor.reload()`.
+- Hidden files: `code.py`, `main.py`, `boot.py`, `secrets.py`, `settings.py` and `calculator.py`
+  (module of the calculator). Add your own in `settings.toml`:
+
+  ```toml
+  LAUNCHER_EXCLUDE = "my_module.py,test.py"
+  ```
+
+- Fonts are searched in `/fonts` then `/font`; the built-in font is used if none is found.
+
+## Install
+
+1. Copy the content of this folder to the PyPortal (rename `font/` to `fonts/` or keep it, both work).
+2. `pip install circup` then `circup install -r requirements.txt`.
+3. Fill in `settings.toml` if your apps need Wi-Fi.
+
+## Included apps
+
+| File | App |
+|---|---|
+| `titano_calc.py` (+ `calculator.py`) | Touch calculator |
+| `light sensor view.py` | Light sensor sparkline graph |
+
+## Ideas for next versions
+
+- Physical buttons navigation (boards without touchscreen)
+- Apps on SD card
+- Landscape / portrait switch
+- App icons (BMP next to the `.py` file)

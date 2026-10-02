@@ -1,3 +1,7 @@
+try:
+    from fourwire import FourWire  # CircuitPython 9+
+except ImportError:
+    from displayio import FourWire  # CircuitPython 8
 from adafruit_st7789 import ST7789
 import board, displayio, digitalio, time, microcontroller
 #button init ***********************************************************************
@@ -15,7 +19,7 @@ tft_reset = board.IO0 # GPIO21
 while not spi.try_lock():
     spi.configure(baudrate=32000000)
 spi.unlock()
-display_bus = displayio.FourWire(
+display_bus = FourWire(
     spi,
     command=tft_dc,
     chip_select=tft_cs,

@@ -1,0 +1,17 @@
+# CircuitPython 8+ settings file (replaces secrets.py)
+# Copy this file to the root of CIRCUITPY and fill in your values.
+# Never commit your real values!
+
+CIRCUITPY_WIFI_SSID = "SSID"
+CIRCUITPY_WIFI_PASSWORD = "WIFIKEY"
+
+# Adafruit IO
+ADAFRUIT_AIO_USERNAME = "USER"
+ADAFRUIT_AIO_KEY = "KEY"
+
+# OpenWeather (meteo.py)
+OPENWEATHER_TOKEN = "TOKEN"
+OPENWEATHER_LOCATION = "Blois, FR"
+# OPENWEATHER_ONECALL_VERSION = "3.0"
+
+TIMEZONE = "Europe/Paris"

@@ -1,0 +1,27 @@
+# macOS / Windows
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+
+# CircuitPython drive metadata
+.fseventsd/
+.metadata_never_index
+.Trashes
+System Volume Information/
+boot_out.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Secrets: only commit the templates with fake values
+settings.local.toml
+
+# Editors
+.vscode/
+.idea/
+*~
+
+# Release builds (made by CI on tags)
+dist/

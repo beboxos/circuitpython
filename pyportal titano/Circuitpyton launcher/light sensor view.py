@@ -33,6 +33,10 @@ import random
 import time
 import board
 import displayio
+try:
+    from fourwire import FourWire  # CircuitPython 9+
+except ImportError:
+    from displayio import FourWire  # CircuitPython 8
 import terminalio
 import analogio
 from adafruit_display_text import label
@@ -42,7 +46,7 @@ from adafruit_display_shapes.rect import Rect
 light = analogio.AnalogIn(board.LIGHT)
 # add on to exit on touch
 import adafruit_touchscreen
-import microcontroller
+import supervisor  # supervisor.reload() = back to the launcher
 
 # These pins are used as both analog and digital! XL, XR and YU must be analog
 # and digital capable. YD just need to be digital
@@ -74,7 +78,7 @@ if "DISPLAY" not in dir(board):
         spi.configure(baudrate=32000000)
     spi.unlock()
 
-    display_bus = displayio.FourWire(
+    display_bus = FourWire(
         spi,
         command=tft_dc,
         chip_select=tft_cs,
@@ -101,7 +105,7 @@ if "DISPLAY" not in dir(board):
     )
 
     # reset the display to show nothing.
-    display.show(None)
+    display.root_group = None
 else:
     # built-in display
     display = board.DISPLAY
@@ -167,7 +171,7 @@ bounding_rectangle = Rect(
 # elements are added to the group will set which is on top.  Latter elements
 # are displayed on top of former elemtns.
 
-my_group = displayio.Group(max_size=20)
+my_group = displayio.Group()
 
 my_group.append(sparkline1)
 my_group.append(text_label1a)
@@ -186,8 +190,7 @@ for i in range(total_ticks + 1):
 
 
 # Set the display to show my_group that contains the sparkline and other graphics
-display.show(my_group)
-
+display.root_group = my_group
 # Start the main loop
 while True:
     #read touch point if pressed exit
@@ -198,7 +201,7 @@ while True:
     display.auto_refresh = False
     if p:
         #touchscreen pressed ok then reset device to go back launcher
-        microcontroller.reset()
+        supervisor.reload()
     # add_value: add a new value to a sparkline
     # Note: The y-range for mySparkline1 is set to 0 to 10, so all these random
     # values (between 0 and 10) will fit within the visible range of this sparkline

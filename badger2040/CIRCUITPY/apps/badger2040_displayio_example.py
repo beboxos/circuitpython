@@ -37,7 +37,7 @@ group.append(title_label)
 group.append(subtitle_label)
 
 # Show the group and refresh the screen to see the result
-display.show(group)
+display.root_group = group
 display.refresh()
 
 #exit after 20 sec

@@ -1,0 +1,28 @@
+name: release
+
+# Build one ready-to-copy .zip per project and attach them to the GitHub
+# release when a version tag (e.g. v2.0) is pushed.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  zips:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build per-project zips
+        run: python3 tools/make_release_zips.py
+      - name: Attach zips to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true

@@ -16,7 +16,7 @@
  ║          ╚═╝        ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝║
  ║                                                              ║
  ║                  U S E R ' S   M A N U A L                   ║
- ║                        Version 0.04                          ║
+ ║                        Version 0.06                          ║
  ║                                                              ║
  ║          For Adafruit PyPortal Titano — CircuitPython        ║
  ║                  with M5Stack CardKB keyboard                ║
@@ -128,7 +128,7 @@ When BasicPython starts, you will see:
   * | _ \/ _` |(_-/| |/ _||  _/ \_.  ||  _||   \ / _ \| ' \  *
   * |___/\__/_|/__/|_|\__||_|   |__/  \__||_||_|\___/|_||_| *
   ***********************************************************
-  v0.04 for CircuitPython devices with CardKB i2c
+  v0.06 for CircuitPython - keyboard: CardKB / BBQ10 / USB
 
   Enter !help for command list
 
@@ -743,6 +743,110 @@ Variables and imports are preserved throughout the session in a shared namespace
 
 ---
 
+## 5.8 — NEW IN v0.05
+
+```
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  NO CARDKB ? NO PROBLEM.                                        │
+  │  If no CardKB is found on I2C, BasicPython now uses the USB     │
+  │  serial console (Mu, Thonny, screen, tio...). Arrow keys, Home, │
+  │  End and Backspace work through ANSI escape sequences.          │
+  └─────────────────────────────────────────────────────────────────┘
+
+  COMMAND          WHAT IT DOES
+  ─────────────────────────────────────────────────────────────────
+  edit N           Re-type line N with its current text pre-filled.
+                   Use ← → Home End and Backspace, Enter to validate.
+  ins N <code>     Insert <code> as line N; lines N.. move down by 1.
+  auto [N[,S]]     Automatic line numbers from N with step S
+                   (default: after the last line, step 1).
+                   An empty line leaves AUTO mode.
+  list N           List only line N.
+  list N-M         List lines N to M  (list -M / list N- work too).
+  find <text>      Show every line containing <text>.
+  run <file>       Run a .py file directly without loading it.
+  save             Without a name: re-use the last loaded/saved file.
+  vars             Show the variables created in direct mode.
+  history          Show the last 30 typed commands.
+  time             Show the clock and the uptime.
+  ls [path]        Same as dir. dir without path = current directory.
+  help             Same as !help.
+
+  ─────────────────────────────────────────────────────────────────
+  REPL-LIKE ECHO       READY.
+                       >>>6*7
+                       42
+
+  SAFETY NET           new, load and exit ask for confirmation when
+                       the program was modified and not saved.
+
+  BREAK                Ctrl+C (USB console) stops a running program
+                       and prints BREAK.
+
+  input()              Inside a program, input() reads from the
+                       active keyboard (CardKB or USB console).
+
+  ERRORS               Runtime errors show the full traceback with
+                       the line number of the program.
+```
+
+---
+
+## 5.9 — BASIC LANGUAGE MODE (NEW IN v0.06)
+
+```
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  A REAL 80's BASIC, RIGHT ON YOUR GADGET.                       │
+  │  Type `basic` to make RUN execute your program as BASIC, and    │
+  │  `py` to go back to Python (the default). The prompt shows      │
+  │  `BASIC >>>` while the BASIC engine is active.                  │
+  └─────────────────────────────────────────────────────────────────┘
+
+  EXAMPLE
+    basic
+    10 PRINT "FACTORIALS:"
+    20 FOR N = 1 TO 5
+    30 F = 1
+    40 FOR K = 1 TO N
+    50 F = F * K
+    60 NEXT K
+    70 PRINT N; "! = "; F
+    80 NEXT N
+    run
+
+  STATEMENTS
+    PRINT a; b, c     print (; = join, , = tab, trailing ; = no newline)
+    LET A = expr      assign (LET is optional: A = expr works too)
+    INPUT "p"; A      ask the user (A$ for a string)
+    IF cond THEN ...  THEN a statement, or THEN <line> to GOTO
+    GOTO n            jump to line n
+    GOSUB n / RETURN  call / return from a subroutine
+    FOR A=1 TO 9 [STEP s] ... NEXT [A]
+    REM text          comment
+    END / STOP        stop the program
+    WAIT ms           pause
+
+  GRAPHICS & SOUND (need a screen / speaker, ignored otherwise)
+    CLS               clear the screen
+    COLOR n           pen color 0..9
+    PLOT x, y         draw a point
+    LINE x1,y1,x2,y2  draw a line
+    BEEP [freq[,ms]]  play a tone
+
+  EXPRESSIONS
+    + - * /  MOD, parentheses, = <> < > <= >=, AND OR NOT
+    functions: ABS INT RND SGN SQR LEN CHR ASC MIN MAX STR VAL
+    RND(n) = 1..n, strings use A$ names
+
+  AUTOEXEC
+    autoexec.bas (or autoexec.py) at the root runs automatically at boot.
+
+  Example programs are in the examples/ folder:
+    load examples/hello.bas  then  basic  then  run
+```
+
+---
+
 # 6. SAMPLE PROGRAMS
 
 ---
@@ -858,7 +962,7 @@ After running, you can read it back with:
   │  Line must be >= 1               Line number < 1 entered        │
   │  Line out of range (1 - N)       DEL with invalid line number   │
   │  Usage: <command> <args>         Wrong syntax for a command     │
-  │  !!! CardKB not found            CardKB not at I2C address 95   │
+  │  keyboard: USB serial            CardKB not found: USB console  │
   └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -870,18 +974,18 @@ After running, you can read it back with:
   ┌─────────────────────────────────────────────────────────────────┐
   │  Module          Function used          Available in CP         │
   ├─────────────────────────────────────────────────────────────────┤
-  │  os              chdir, getcwd          7.x, 8.x ✓              │
-  │  os              mkdir, rmdir           7.x, 8.x ✓              │
-  │  os              remove, rename         7.x, 8.x ✓              │
-  │  os              stat, listdir          7.x, 8.x ✓              │
-  │  os              statvfs                7.x, 8.x ✓              │
-  │  os              uname                  7.x, 8.x ✓              │
-  │  gc              collect, mem_free      7.x, 8.x ✓              │
-  │  gc              mem_alloc              7.x, 8.x ✓              │
-  │  microcontroller cpu.frequency          7.x, 8.x ✓              │
+  │  os              chdir, getcwd          7.x - 10.x ✓            │
+  │  os              mkdir, rmdir           7.x - 10.x ✓            │
+  │  os              remove, rename         7.x - 10.x ✓            │
+  │  os              stat, listdir          7.x - 10.x ✓            │
+  │  os              statvfs                7.x - 10.x ✓            │
+  │  os              uname                  7.x - 10.x ✓            │
+  │  gc              collect, mem_free      7.x - 10.x ✓            │
+  │  gc              mem_alloc              7.x - 10.x ✓            │
+  │  microcontroller cpu.frequency          7.x - 10.x ✓            │
   │  microcontroller cpu.temperature        7.x, 8.x ✓ (may be None)│
-  │  microcontroller reset()               7.x, 8.x ✓              │
-  │  busio           I2C                    7.x, 8.x ✓              │
+  │  microcontroller reset()               7.x - 10.x ✓            │
+  │  busio           I2C                    7.x - 10.x ✓            │
   └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -909,13 +1013,29 @@ After running, you can read it back with:
                      mem, df, ver
                    ANSI helpers extracted
                    Full user manual (EN + FR)
+  v0.05  2026-10   USB serial console fallback (no CardKB needed)
+                   New: edit, ins, auto, find, vars, history, time,
+                        ls, list N-M, run <file>, save (last file)
+                   REPL-like expression echo, input() support,
+                   Ctrl+C break, unsaved-changes confirmation,
+                   tracebacks with line numbers
+                   Fixed: crash at boot without I2C device
+                   API compatible with CircuitPython 9.x / 10.x
+  v0.06  2026-10   Real BASIC language engine (basic.py): PRINT INPUT
+                   LET IF/THEN GOTO GOSUB/RETURN FOR/NEXT REM END,
+                   CLS COLOR PLOT LINE BEEP WAIT, expressions and
+                   functions. `basic` / `py` switch the RUN engine.
+                   autoexec.bas / autoexec.py at boot. boot.py makes
+                   CIRCUITPY writable (save). BBQ10 keyboard support
+                   via bebox_common (runs on the Keyboard FeatherWing).
+                   Example .bas programs in examples/.
 ```
 
 ---
 
 ```
   ┌───────────────────────────────────────────────────────────┐
-  │  BasicPython v0.04 — (c) 2021-2026 @beboxos              │
+  │  BasicPython v0.06 — (c) 2021-2026 @beboxos              │
   │  Based on original work by Scott Shawcroft               │
   │  https://github.com/tannewt/basicpython                  │
   │  https://twitter.com/beboxos                             │

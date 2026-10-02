@@ -113,3 +113,25 @@ Nothing could be simpler: copy in the "images" directory your images, 296x128 pi
 ## # Ebook function (.txt reader)
 
 Simply copy your .txt file to the ebook directory and at the next reset it will be available in the menu.
+
+## Update 2026: battery deep sleep (lib/badger_power.py)
+
+A new helper puts the RP2040 into deep sleep between updates. The e-ink screen
+keeps its image with no power, so a badge can last for months on battery.
+
+Add at the very end of your `code.py`, once the screen shows what you want:
+
+```python
+import badger_power
+badger_power.sleep_until_button()   # wake on A / B / C / UP / DOWN
+# or: badger_power.sleep_for(600)   # wake after 10 minutes
+```
+
+After a deep sleep the board restarts and runs `code.py` from the top, so
+structure your code to *redraw, then sleep*. `badger_power.woke_from_button()`
+tells you whether the last wake came from a button.
+
+> Note: `code.py` (1383 lines) is scheduled to be split into modules
+> (`ui`, `badge`, `ebook`, `hid`, `prefs`) — that refactor needs a Badger on
+> hand to test each screen, so it is kept for a hardware session. The deep
+> sleep helper above is self-contained and does not change the existing code.

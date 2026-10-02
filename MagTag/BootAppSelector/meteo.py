@@ -4,7 +4,16 @@ import displayio
 import adafruit_imageload
 from adafruit_display_text import label
 from adafruit_magtag.magtag import MagTag
-from secrets import secrets
+import os
+# CircuitPython 8+: settings come from settings.toml (secrets.py still works)
+try:
+    from secrets import secrets
+except ImportError:
+    secrets = {}
+for _key, _env in (("openweather_token", "OPENWEATHER_TOKEN"),
+                   ("openweather_location", "OPENWEATHER_LOCATION")):
+    if os.getenv(_env):
+        secrets[_key] = os.getenv(_env)
 
 # --| USER CONFIG |--------------------------
 METRIC = True  # set to True for metric units
@@ -55,7 +64,10 @@ def get_data_source_url(api="onecall", location=None):
         URL = "https://api.openweathermap.org/data/2.5/forecast?"
         URL += "q=" + location
     elif api.upper() == "ONECALL":
-        URL = "https://api.openweathermap.org/data/2.5/onecall?exclude=minutely,hourly,alerts"
+        # One Call 2.5 was shut down by OpenWeather in 2024: 3.0 by default
+        # (free "One Call by Call" subscription needed on openweathermap.org)
+        URL = "https://api.openweathermap.org/data/{}/onecall?exclude=minutely,hourly,alerts".format(
+            os.getenv("OPENWEATHER_ONECALL_VERSION") or "3.0")
         URL += "&lat={}".format(location[0])
         URL += "&lon={}".format(location[1])
     else:

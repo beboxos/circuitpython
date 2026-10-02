@@ -1,0 +1,12 @@
+# Libraries from the Adafruit CircuitPython bundle.
+# Install / update them on the board (CIRCUITPY mounted) with:
+#   pip install circup
+#   circup install -r requirements.txt
+adafruit_bitmap_font
+adafruit_display_shapes
+adafruit_display_text
+adafruit_epd
+adafruit_framebuf
+adafruit_hid
+adafruit_imageload
+adafruit_miniqr

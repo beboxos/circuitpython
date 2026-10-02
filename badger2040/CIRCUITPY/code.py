@@ -9,7 +9,8 @@ change log : add info
 import gc, os , math, microcontroller, digitalio, board, storage
 import analogio, time, usb_hid
 from adafruit_hid.keyboard import Keyboard
-import adafruit_ducky, busio, displayio , terminalio , vectorio
+import ducky_bebox as adafruit_ducky  # BeBoX version: single command mode + ALTGR
+import busio, displayio , terminalio , vectorio
 from adafruit_display_text import label
 from adafruit_bitmap_font import bitmap_font
 import adafruit_imageload
@@ -39,7 +40,7 @@ try:
     if usb==True:
         keyboard = Keyboard(usb_hid.devices)
         if layout=="fr": 
-            from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
+            from keyboard_layout_fr import KeyboardLayoutFR
             keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
             
         else:
@@ -76,7 +77,7 @@ def fixlayout(lang):
     if usb==True:
         keyboard = Keyboard(usb_hid.devices)
         if lang=="fr": 
-            from adafruit_hid.keyboard_layout_fr import KeyboardLayoutFR
+            from keyboard_layout_fr import KeyboardLayoutFR
             keyboard_layout = KeyboardLayoutFR(keyboard)  # We're in France :)
             
         else:
@@ -409,8 +410,7 @@ def render(tablist, defaulticon="file"):
     print("On render usb =",end='')
     print(usb)
     usbconnected()
-    display.show(mainScreen)
-
+    display.root_group = mainScreen
     while display.busy==True:
         time.sleep(0.01)     
     display.refresh()
@@ -658,7 +658,7 @@ def launch_example(index):
         labelt.x =  0
         labelt.y =  y
         mainScreen.append(labelt)
-        display.show(mainScreen)
+        display.root_group = mainScreen
         while display.busy==True:
             time.sleep(0.01)         
         display.refresh()
@@ -818,7 +818,7 @@ def img(index):
             tile_grid.x = 0
             tile_grid.y = 0
             mainScreen.append(tile_grid)
-            display.show(mainScreen)
+            display.root_group = mainScreen
             display.refresh()
             mainScreen.pop() #kill pic
             mainScreen.pop() #kill whiteBG
@@ -1064,7 +1064,7 @@ def draw_badge(file):
     else:
         print("show QR")
         badgeQR(file)
-    display.show(badgescn)
+    display.root_group = badgescn
     display.refresh()
     for i in range(0, len(badgescn)):
         badgescn.pop()
@@ -1239,7 +1239,7 @@ def render_page():
             if (row * TEXT_SPACING) + TEXT_SPACING >= HEIGHT:
                 print("+++++")
                 endpop=len(ebgroup)
-                display.show(ebgroup)
+                display.root_group = ebgroup
                 display.refresh()
                 # pop lines for later :)
                 for lp in range(inipop,endpop):
@@ -1259,7 +1259,7 @@ def render_page():
                 if (row * TEXT_SPACING) + TEXT_SPACING >= HEIGHT:
                     print("+++++")
                     endpop=len(ebgroup)
-                    display.show(ebgroup)
+                    display.root_group = ebgroup
                     while display.busy==True:
                         time.sleep(0.01)
                     display.refresh()
