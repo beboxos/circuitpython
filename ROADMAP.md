@@ -28,6 +28,26 @@ améliorations proposées projet par projet, classées par priorité :
 
 ---
 
+## Deuxième vague (octobre 2026)
+
+| Domaine | Livré |
+|---|---|
+| Module commun | `common/bebox_common` : clavier unique (CardKB, BlackBerry Q10, console USB) et lanceur d'applis ; `tools/sync_common.py` le copie dans 6 projets, la CI vérifie la synchro |
+| BasicPython v0.06 | Vrai BASIC (`basic.py`) : PRINT, INPUT, LET, IF/THEN, GOTO, GOSUB/RETURN, FOR/NEXT/STEP, REM, END, CLS, COLOR, PLOT, LINE, BEEP, WAIT ; commandes `basic` / `py` ; `autoexec.bas` ; `boot.py` (save) ; clavier BBQ10 → tourne sur le Keyboard FeatherWing ; exemples `.bas` ; manuels EN/FR |
+| Menus de démarrage | MagTag, FeatherS2 et ATMegaZero passés à `set_next_code_file()` (fini NVM + `exec`) |
+| T-Embed | Nouveau multi-outil : minuteur, chrono, Pomodoro, horloge NTP, menu à molette |
+| DuckyPad v2.0 | Pages de macros (touche 15 = page suivante, couleur par page) + page MEDIA (volume, lecture, pistes) |
+| BadgerOS | `lib/badger_power.py` : veille profonde réveillée par bouton ou minuterie |
+| Releases | `tools/make_release_zips.py` + workflow : un `.zip` par projet attaché à chaque release `v*` |
+| Historique GPS | `tools/purge_gps_history.sh` prêt ; **à lancer par vous** (réécrit l'historique, push forcé) |
+
+### Reste à faire
+- 🔴 **Tester sur les cartes** : rien n'a pu être essayé sur le matériel (BASIC et lanceur testés sur PC avec modules simulés).
+- 🟠 **BadgerOS** : le découpage de `code.py` (1 383 lignes) demande une Badger sous la main pour vérifier chaque écran ; laissé pour une séance avec le matériel.
+- 🟢 BasicPython : éditeur plein écran, autocomplétion Tab, `wifi` / `get <url>`.
+
+---
+
 ## BasicPython (PyPortal Titano / Wio Terminal)
 
 - 🔴 **Rendre CIRCUITPY inscriptible** depuis BasicPython : fournir un `boot.py` qui fait

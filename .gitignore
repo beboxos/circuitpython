@@ -22,3 +22,6 @@ settings.local.toml
 .vscode/
 .idea/
 *~
+
+# Release builds (made by CI on tags)
+dist/

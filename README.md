@@ -17,20 +17,28 @@ cd "<project>/CIRCUITPY"        # the folder you copy to the board
 circup install -r requirements.txt
 ```
 
+## Shared code and tools
+
+- [`common/bebox_common`](common/bebox_common): one keyboard API (CardKB, BlackBerry Q10, USB
+  console) and an app launcher (`supervisor.set_next_code_file()`), copied into each project's
+  `lib/` by `python3 tools/sync_common.py` (CI checks the copies are in sync).
+- Ready-to-copy `.zip` per project are attached to each [GitHub release](../../releases)
+  (built by `tools/make_release_zips.py` when a `v*` tag is pushed).
+
 ## Projects
 
 | Project | Board | Status |
 |---|---|---|
-| [BasicPython](#basic-python-for-pyportal-works-on-wio-terminal-too) | PyPortal Titano, Wio Terminal, any board | ✅ v0.05 (2026) |
+| [BasicPython](#basic-python-for-pyportal-works-on-wio-terminal-too) | PyPortal Titano, Wio Terminal, Keyboard FeatherWing, any board | ✅ v0.06 real BASIC (2026) |
 | [CircuitPython Launcher](#circuitpython-launcher-for-adafruit-pyportal-titano) | PyPortal Titano | ✅ v2.0 (2026) |
-| [T-Embed timer](#lilygo-t-embed) | LilyGO T-Embed ESP32-S3 | ✅ v2.0 (2026) |
-| [BadgerOS](#circuitpython-badgeros-for-pimoroni-badger2040) | Pimoroni Badger 2040 | 🔧 CP 9 API migrated |
-| [Keyboard FeatherWing](#keyboard-featherwing) | FeatherS2, Feather M4 Express | 🔧 CP 9 API migrated |
-| [Pico RGB Keypad DuckyPad](#pico-rgb-keypad) | Raspberry Pi Pico | 🔧 CP 9 API migrated |
+| [T-Embed timer + multi-tool](#lilygo-t-embed) | LilyGO T-Embed ESP32-S3 | ✅ timer v2.0, multi-tool (2026) |
+| [BadgerOS](#circuitpython-badgeros-for-pimoroni-badger2040) | Pimoroni Badger 2040 | 🔧 CP 9 API migrated, deep sleep helper |
+| [Keyboard FeatherWing](#keyboard-featherwing) | FeatherS2, Feather M4 Express | 🔧 boot menu v2.0 (set_next_code_file) |
+| [Pico RGB Keypad DuckyPad](#pico-rgb-keypad) | Raspberry Pi Pico | 🔧 v2.0 pages + media keys |
 | [Challenger 2040 WiFi](#challenger-2040-wifi-feather) | iLabs Challenger RP2040 WiFi | ✅ v2.0 Wi-Fi demo (2026) |
-| [ATMegaZero S2](#atmegazero-s2) | ATMegaZero ESP32-S2 | 🔧 CP 9 API migrated |
+| [ATMegaZero S2](#atmegazero-s2) | ATMegaZero ESP32-S2 | 🔧 boot menu v2.0 (set_next_code_file) |
 | [Seeed XIAO UART to HID](#seeed-xiao) | Seeed XIAO SAMD21 | 🔧 libraries updated |
-| [MagTag Boot App Selector](#adafruit-magtag) | Adafruit MagTag | 🔧 `settings.toml`, OpenWeather fix |
+| [MagTag Boot App Selector](#adafruit-magtag) | Adafruit MagTag | 🔧 v2.0 (set_next_code_file), OpenWeather fix |
 | [Wio SmartTerminal](#seeed-wio-terminal) | Seeed Wio Terminal | 🔧 to test |
 
 ✅ rewritten and tested on desktop — 🔧 migrated, to be tested on the board
@@ -60,7 +68,9 @@ Originally it is an experiment to edit Python code like BASIC was edited. The id
 I ported it to Adafruit PyPortal Titano CircuitPython (works on Wio Terminal under CircuitPython too).
 
 It works with the I2C M5Stack CardKB keyboard and, since v0.05, with **any terminal over USB
-serial** when no CardKB is connected. v0.05 adds `edit`, `auto`, `ins`, `find`, `vars`,
+serial** when no CardKB is connected, and with the BlackBerry keyboard of the Keyboard
+FeatherWing. **v0.06 adds a real 80's BASIC** (`PRINT`, `GOTO`, `GOSUB`, `FOR…NEXT`, `IF…THEN`,
+`PLOT`, `LINE`, `BEEP`…) and `autoexec.bas`. v0.05 added `edit`, `auto`, `ins`, `find`, `vars`,
 `history`, REPL-like expression echo, `input()` support, Ctrl+C and much more.
 
 This makes our little gadgets autonomous for running and coding on the go.
@@ -76,7 +86,8 @@ user's manual in [English](<pyportal titano/basicpython/Readme.md>) and
 
 # LilyGO T-Embed
 
-Kitchen timer with rotary encoder, LED ring progress, pause / resume and beeps.
+Kitchen timer with rotary encoder, LED ring progress, pause / resume and beeps, and a
+multi-tool (timer, stopwatch, Pomodoro, NTP clock) with a knob-driven menu.
 [Click here to access this section](T-embed)
 
 

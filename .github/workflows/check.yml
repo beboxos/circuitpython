@@ -28,3 +28,5 @@ jobs:
       - name: No legacy CircuitPython 7/8 display API outside lib/
         run: |
           ! grep -rnE "^\s*[A-Za-z_.]*(display|DISPLAY)\.show\(|max_glyphs|Group\(max_size|displayio\.FourWire\(" --include=*.py . | grep -v "/lib/"
+      - name: bebox_common copies are in sync with common/
+        run: python3 tools/sync_common.py --check
